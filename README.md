@@ -56,7 +56,6 @@ No user data leaves the site. There are no external requests or trackers. All ad
 
 ## Links
 
-- WordPress.org plugin directory: *(pending submission)*
 - Author: [Nubivio](https://nubivio.com/)
 
 ## License
