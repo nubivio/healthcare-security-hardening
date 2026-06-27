@@ -1,0 +1,28 @@
+# Optional: deploy a tagged GitHub release to the WordPress.org SVN repo.
+# Place this at .github/workflows/deploy.yml in the repo to enable it.
+# Requires repo secrets SVN_USERNAME and SVN_PASSWORD (your WordPress.org login).
+# Not needed for the first manual submission — use only after the plugin is approved
+# and the SVN repo exists.
+
+name: Deploy to WordPress.org
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    name: Deploy to WordPress.org SVN
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: WordPress Plugin Deploy
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          # Set SLUG to the slug WordPress.org assigned at approval, if it differs
+          # from the repo name. Leave unset to use the repo name.
+          # SLUG: healthcare-security-hardening
