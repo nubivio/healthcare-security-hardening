@@ -1,30 +1,30 @@
 <?php
 /**
- * Plugin Name:       Nubivio Salus - Security Hardening for Healthcare
+ * Plugin Name:       Nubivio Healthcare Security Hardening
  * Plugin URI:        https://github.com/nubivio/healthcare-security-hardening
  * Description:       Security headers, a self-renewing security.txt (RFC 9116) and advanced form protection for healthcare related WordPress sites. Built for general practitioners, psychologists and other healthcare professionals. Recommended for NIS2, GDPR & NEN7510 compliance.
- * Version:           2.0.0
+ * Version:           2.1.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Nubivio
  * Author URI:        https://nubivio.com/
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       healthcare-security-hardening
+ * Text Domain:       nubivio-healthcare-security-hardening
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-final class Nubivio_Salus {
+final class Nubivio_HSH {
 
-    const VERSION   = '2.0.0';
-    const OPTION    = 'nubivio_salus_options';
-    const CRON_HOOK = 'nubivio_salus_daily';
-    const SLUG      = 'nubivio-salus';
+    const VERSION   = '2.1.0';
+    const OPTION    = 'nubivio_hsh_options';
+    const CRON_HOOK = 'nubivio_hsh_daily';
+    const SLUG      = 'nubivio-healthcare-security-hardening';
 
-    /** @var Nubivio_Salus|null */
+    /** @var Nubivio_HSH|null */
     private static $instance = null;
 
     public static function instance() {
@@ -43,6 +43,7 @@ final class Nubivio_Salus {
         add_action('admin_menu', array($this, 'register_settings_page'));
         add_action('admin_init', array($this, 'handle_form_submit'));
         add_action('admin_init', array($this, 'maybe_refresh_security_txt_file'));
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
         add_filter('plugin_action_links_' . plugin_basename(__FILE__), array($this, 'settings_link'));
 
         add_action(self::CRON_HOOK, array($this, 'write_security_txt_file'));
@@ -217,12 +218,25 @@ final class Nubivio_Salus {
 
     /* security.txt (RFC 9116) */
 
+    /**
+     * Absolute filesystem path to the public site root.
+     *
+     * Uses get_home_path() so the file lands at the public home directory,
+     * which can differ from ABSPATH on subdirectory / giving-WordPress-its-own-directory installs.
+     */
+    private function home_path() {
+        if (!function_exists('get_home_path')) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+        return rtrim(get_home_path(), '/\\');
+    }
+
     private function security_txt_path() {
-        return rtrim(ABSPATH, '/\\') . '/.well-known/security.txt';
+        return $this->home_path() . '/.well-known/security.txt';
     }
 
     private function security_txt_dir() {
-        return rtrim(ABSPATH, '/\\') . '/.well-known';
+        return $this->home_path() . '/.well-known';
     }
 
     public function canonical_url() {
@@ -271,7 +285,7 @@ final class Nubivio_Salus {
         $lines[] = 'Canonical: ' . $this->canonical_url();
 
         if (!empty($o['sectxt_love'])) {
-            $lines[] = '# Hardened by Nubivio Salus · boring, predictable security · https://nubivio.com';
+            $lines[] = '# Hardened by Nubivio · boring, predictable security · https://nubivio.com';
         }
 
         // CRLF with a trailing terminator, per RFC 9116.
@@ -299,7 +313,7 @@ final class Nubivio_Salus {
     /* PGP public key (hosted, linked from security.txt as Encryption) */
 
     private function pgp_key_path() {
-        return rtrim(ABSPATH, '/\\') . '/.well-known/openpgp-key.txt';
+        return $this->home_path() . '/.well-known/openpgp-key.txt';
     }
 
     public function pgp_key_url() {
@@ -345,10 +359,10 @@ final class Nubivio_Salus {
 
     public function maybe_refresh_security_txt_file() {
         $o = $this->get_options();
-        if (empty($o['sectxt_enabled']) || get_transient('nubivio_salus_sectxt_checked')) {
+        if (empty($o['sectxt_enabled']) || get_transient('nubivio_hsh_sectxt_checked')) {
             return;
         }
-        set_transient('nubivio_salus_sectxt_checked', 1, 12 * HOUR_IN_SECONDS);
+        set_transient('nubivio_hsh_sectxt_checked', 1, 12 * HOUR_IN_SECONDS);
 
         $path = $this->security_txt_path();
         $refresh = true;
@@ -370,7 +384,7 @@ final class Nubivio_Salus {
         if (empty($_SERVER['REQUEST_URI'])) {
             return;
         }
-        $path = wp_parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $path = wp_parse_url(esc_url_raw(wp_unslash($_SERVER['REQUEST_URI'])), PHP_URL_PATH);
         $o = $this->get_options();
 
         if ($path === '/.well-known/security.txt') {
@@ -457,14 +471,42 @@ final class Nubivio_Salus {
     }
 
     public function register_settings_page() {
-        add_options_page('Nubivio Salus', 'Nubivio Salus', 'manage_options', self::SLUG, array($this, 'render_settings_page'));
+        $this->page_hook = add_options_page(
+            'Nubivio Healthcare Security Hardening',
+            'Nubivio Security',
+            'manage_options',
+            self::SLUG,
+            array($this, 'render_settings_page')
+        );
+    }
+
+    /** @var string|null */
+    private $page_hook = null;
+
+    public function enqueue_admin_assets($hook) {
+        if ($this->page_hook === null || $hook !== $this->page_hook) {
+            return;
+        }
+        wp_enqueue_style(
+            'nubivio-hsh-admin',
+            plugins_url('assets/admin.css', __FILE__),
+            array(),
+            self::VERSION
+        );
+        wp_enqueue_script(
+            'nubivio-hsh-admin',
+            plugins_url('assets/admin.js', __FILE__),
+            array(),
+            self::VERSION,
+            true
+        );
     }
 
     public function handle_form_submit() {
-        if (!isset($_POST['nubivio_salus_nonce']) || !current_user_can('manage_options')) {
+        if (!isset($_POST['nubivio_hsh_nonce']) || !current_user_can('manage_options')) {
             return;
         }
-        if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nubivio_salus_nonce'])), 'nubivio_salus_save')) {
+        if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nubivio_hsh_nonce'])), 'nubivio_hsh_save')) {
             return;
         }
 
@@ -503,7 +545,7 @@ final class Nubivio_Salus {
 
         update_option(self::OPTION, wp_parse_args($clean, $d));
 
-        delete_transient('nubivio_salus_sectxt_checked');
+        delete_transient('nubivio_hsh_sectxt_checked');
         $this->write_security_txt_file();
 
         wp_safe_redirect(add_query_arg(array('page' => self::SLUG, 'updated' => '1'), admin_url('options-general.php')));
@@ -563,7 +605,7 @@ final class Nubivio_Salus {
         $internetnl = 'https://internet.nl/site/' . rawurlencode($host) . '/';
         $saved = isset($_GET['updated']); // phpcs:ignore WordPress.Security.NonceVerification
         ?>
-        <div class="wrap" id="nubivio-salus">
+        <div class="wrap" id="nubivio-hsh">
             <?php if ($saved): ?>
                 <div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>
             <?php endif; ?>
@@ -572,7 +614,7 @@ final class Nubivio_Salus {
                 <div class="ns-header-main">
                     <div class="ns-brand">
                         <?php echo $this->logo_svg(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-                        <span class="ns-brand-suffix">Salus</span>
+                        <span class="ns-brand-suffix">Healthcare Security</span>
                     </div>
                     <p>Security hardening for WordPress. Headers, security.txt and form protection, aligned with the internet.nl test.</p>
                 </div>
@@ -621,7 +663,7 @@ final class Nubivio_Salus {
             </div>
 
             <form method="post" action="">
-                <?php wp_nonce_field('nubivio_salus_save', 'nubivio_salus_nonce'); ?>
+                <?php wp_nonce_field('nubivio_hsh_save', 'nubivio_hsh_nonce'); ?>
 
                 <div class="ns-card">
                     <h2>Security headers</h2>
@@ -762,7 +804,7 @@ final class Nubivio_Salus {
 
                     <div class="ns-field ns-field-flat">
                         <?php $this->cb('sectxt_love', 'Show Nubivio some love', $o, 'Adds a small Nubivio signature comment to security.txt. Turn it off to keep the file plain.'); ?>
-                        <p class="ns-love-msg" id="ns-love-msg" aria-live="polite"></p>
+                        <p class="ns-love-msg" id="nhsh-love-msg" aria-live="polite"></p>
                     </div>
                 </div>
 
@@ -788,92 +830,12 @@ final class Nubivio_Salus {
                 </div>
             </form>
         </div>
-
-        <script>
-        (function(){
-            var root = document.getElementById('nubivio-salus');
-            if (!root) { return; }
-            var cb = root.querySelector('input[name="sectxt_love"]');
-            var msg = document.getElementById('ns-love-msg');
-            if (!cb || !msg) { return; }
-            function update(){
-                if (cb.checked) {
-                    msg.style.display = 'none';
-                    msg.textContent = '';
-                } else {
-                    msg.style.display = 'block';
-                    msg.textContent = '\uD83D\uDC94 Ouch. Fine, we will keep hardening your headers in total silence. \uD83D\uDE22';
-                }
-            }
-            cb.addEventListener('change', update);
-            update();
-        })();
-        </script>
-
-        <style>
-        #nubivio-salus{--p:#044172;--p2:#13274C;--p-deep:#01233F;--mist:#E6E7E8;--ink:#231F20;--ok:#1FB57A;--ok-bg:#E5F7EE;--warn:#E8A33A;--warn-bg:#FCF1DD;--danger:#E04A4A;--info-bg:#D9E2EB;max-width:920px;}
-        #nubivio-salus *{box-sizing:border-box;}
-        #nubivio-salus .ns-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;background:linear-gradient(135deg,#13274C 0%,#044172 60%,#01233F 100%);color:#fff;padding:24px 26px;border-radius:14px;margin:16px 0 18px;box-shadow:0 6px 22px rgba(4,65,114,.18);}
-        #nubivio-salus .ns-header-main{flex:1;}
-        #nubivio-salus .ns-brand{display:flex;align-items:center;gap:12px;}
-        #nubivio-salus .ns-logo-svg{height:30px;width:auto;display:block;}
-        #nubivio-salus .ns-logo-svg path{fill:#fff;}
-        #nubivio-salus .ns-brand-suffix{font-size:22px;font-weight:300;color:#B4C6D6;letter-spacing:.01em;border-left:1px solid rgba(255,255,255,.25);padding-left:12px;line-height:1;}
-        #nubivio-salus .ns-header p{margin:12px 0 0;color:#B4C6D6;font-size:13px;max-width:560px;line-height:1.45;}
-        #nubivio-salus .ns-head-meta{flex:0 0 auto;font-size:11px;color:#82A0B9;border:1px solid rgba(255,255,255,.18);padding:3px 9px;border-radius:999px;}
-        #nubivio-salus .ns-card{background:#fff;border:1px solid var(--mist);border-radius:14px;padding:20px 24px;margin:0 0 16px;box-shadow:0 1px 2px rgba(19,39,76,.04);}
-        #nubivio-salus .ns-card h2{font-size:16px;font-weight:700;color:var(--p2);margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid var(--mist);display:flex;align-items:center;gap:10px;}
-        #nubivio-salus .ns-tag,#nubivio-salus .ns-req,#nubivio-salus .ns-opt{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:999px;}
-        #nubivio-salus .ns-tag{background:var(--info-bg);color:var(--p);}
-        #nubivio-salus .ns-req{background:var(--warn-bg);color:#9a6a16;}
-        #nubivio-salus .ns-opt{background:var(--mist);color:#6F727A;}
-        #nubivio-salus .ns-card-intro{margin:-4px 0 16px;color:#4A4D55;font-size:13px;line-height:1.5;}
-        #nubivio-salus .ns-field{padding:14px 0;border-bottom:1px solid #f0f1f3;}
-        #nubivio-salus .ns-field:last-child{border-bottom:none;}
-        #nubivio-salus .ns-field-flat{padding:14px 0 4px;}
-        #nubivio-salus .ns-sub{margin:12px 0 2px 52px;display:flex;flex-direction:column;gap:12px;align-items:flex-start;}
-        #nubivio-salus .ns-inline-label{font-size:13px;color:#4A4D55;display:flex;align-items:center;gap:10px;}
-        #nubivio-salus .ns-toggle{display:flex;align-items:center;gap:12px;cursor:pointer;font-weight:600;color:var(--ink);font-size:14px;}
-        #nubivio-salus .ns-sub label.ns-toggle{display:flex;align-items:center;gap:12px;font-weight:600;}
-        #nubivio-salus .ns-toggle input{position:absolute;opacity:0;width:0;height:0;}
-        #nubivio-salus .ns-track{position:relative;flex:0 0 auto;width:40px;height:22px;background:#C9CBCF;border-radius:999px;transition:background .15s;}
-        #nubivio-salus .ns-track:after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.25);}
-        #nubivio-salus .ns-toggle input:checked + .ns-track{background:var(--p);}
-        #nubivio-salus .ns-toggle input:checked + .ns-track:after{transform:translateX(18px);}
-        #nubivio-salus .ns-toggle input:focus-visible + .ns-track{box-shadow:0 0 0 4px rgba(4,65,114,.20);}
-        #nubivio-salus .ns-desc{margin:6px 0 0 52px;color:#6F727A;font-size:12.5px;line-height:1.5;}
-        #nubivio-salus .ns-sub .ns-desc{margin-left:0;}
-        #nubivio-salus .ns-strong{font-weight:700;color:var(--p2);font-size:13px;display:block;margin-bottom:4px;}
-        #nubivio-salus .ns-input{width:100%;max-width:560px;border:1px solid #C9CBCF;border-radius:8px;padding:8px 11px;font-size:13px;color:var(--ink);background:#fff;}
-        #nubivio-salus input[type=number].ns-input{max-width:180px;}
-        #nubivio-salus .ns-input:focus{border-color:var(--p);outline:none;box-shadow:0 0 0 3px rgba(4,65,114,.15);}
-        #nubivio-salus .ns-area{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.5;}
-        #nubivio-salus .ns-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px;}
-        #nubivio-salus .ns-status{border-left:4px solid var(--p);}
-        #nubivio-salus .ns-status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:6px;}
-        #nubivio-salus .ns-stat-label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#6F727A;font-weight:700;margin-bottom:5px;}
-        #nubivio-salus .ns-stat-sub{display:block;font-size:11.5px;color:#6F727A;margin-top:5px;}
-        #nubivio-salus .ns-pill{display:inline-block;font-size:12px;font-weight:700;padding:4px 11px;border-radius:999px;}
-        #nubivio-salus .ns-pill-ok{background:var(--ok-bg);color:#0c7a4f;}
-        #nubivio-salus .ns-pill-warn{background:var(--warn-bg);color:#9a6a16;}
-        #nubivio-salus .ns-pill-info{background:var(--info-bg);color:var(--p);}
-        #nubivio-salus .ns-preview{margin-top:14px;border-top:1px solid var(--mist);padding-top:10px;}
-        #nubivio-salus .ns-preview summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--p);}
-        #nubivio-salus .ns-preview pre{background:var(--p-deep);color:#cfe1f0;padding:14px 16px;border-radius:10px;font-size:11.5px;line-height:1.55;overflow:auto;margin-top:10px;white-space:pre-wrap;word-break:break-word;}
-        #nubivio-salus .ns-actions{display:flex;align-items:center;gap:18px;margin:4px 0 8px;}
-        #nubivio-salus .ns-btn{background:var(--p);color:#fff;border:none;border-radius:10px;padding:11px 26px;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s,transform .05s;}
-        #nubivio-salus .ns-btn:hover{background:#033054;}
-        #nubivio-salus .ns-btn:active{transform:translateY(1px);background:#01233F;}
-        #nubivio-salus .ns-by{font-size:12px;color:#A1A4AB;}
-        #nubivio-salus .ns-love-msg{display:none;margin:8px 0 0 52px;font-size:13px;font-weight:600;color:var(--danger);}
-        @media(max-width:782px){#nubivio-salus .ns-grid-2{grid-template-columns:1fr;}#nubivio-salus .ns-sub,#nubivio-salus .ns-desc{margin-left:0;}}
-        </style>
         <?php
     }
 }
 
-register_activation_hook(__FILE__, array('Nubivio_Salus', 'activate'));
-register_deactivation_hook(__FILE__, array('Nubivio_Salus', 'deactivate'));
-register_uninstall_hook(__FILE__, array('Nubivio_Salus', 'uninstall'));
+register_activation_hook(__FILE__, array('Nubivio_HSH', 'activate'));
+register_deactivation_hook(__FILE__, array('Nubivio_HSH', 'deactivate'));
+register_uninstall_hook(__FILE__, array('Nubivio_HSH', 'uninstall'));
 
-add_action('plugins_loaded', array('Nubivio_Salus', 'instance'));
+add_action('plugins_loaded', array('Nubivio_HSH', 'instance'));

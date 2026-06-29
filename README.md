@@ -1,10 +1,8 @@
-# Nubivio Salus – Security Hardening for Healthcare
+# Nubivio Healthcare Security Hardening
 
 Security headers, a self-renewing `security.txt` (RFC 9116) and advanced form protection for healthcare-related WordPress sites. Built for general practitioners, psychologists and other healthcare professionals. Recommended as a building block toward NIS2, GDPR and NEN 7510 compliance.
 
-> The public listing name is **Nubivio Salus – Security Hardening for Healthcare**. The in-app admin menu label is the shorter **Nubivio Salus**. Both are intentional.
-
-- **Version:** 2.0.0
+- **Version:** 2.1.0
 - **Requires WordPress:** 5.8 or higher
 - **Tested up to:** 7.0
 - **Requires PHP:** 7.4
@@ -42,7 +40,7 @@ Everything is managed from one settings page, with defaults that are safe to shi
 
 1. Upload the plugin folder to `/wp-content/plugins/`, or install the ZIP via **Plugins → Add New → Upload Plugin**.
 2. Activate the plugin.
-3. Open **Settings → Nubivio Salus**.
+3. Open **Settings → Nubivio Security**.
 4. Set a Contact value under security.txt.
 5. To pass the internet.nl Content-Security-Policy check, enable CSP, test in Report-Only, add the domains your site needs, then turn Report-Only off to enforce.
 

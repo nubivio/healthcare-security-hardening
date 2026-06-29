@@ -1,10 +1,10 @@
-=== Nubivio Salus - Security Hardening for Healthcare ===
+=== Nubivio Healthcare Security Hardening ===
 Contributors: nubivio
-Tags: security headers, security.txt, healthcare, gdpr, nis2
+Tags: security, headers, security-txt, csp, hsts
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,7 +48,7 @@ This plugin configures headers and a security.txt. It is one building block towa
 
 1. Upload the plugin folder to /wp-content/plugins/, or install the ZIP via Plugins, Add New, Upload Plugin.
 2. Activate the plugin.
-3. Open Settings, Nubivio Salus.
+3. Open Settings, Nubivio Security.
 4. Set a Contact value under security.txt.
 5. To pass the internet.nl Content-Security-Policy check, enable CSP, test in Report-Only, add the domains your site needs, then turn Report-Only off to enforce.
 
@@ -71,6 +71,12 @@ No. The header and security.txt features work on any site. The form section only
 
 == Changelog ==
 
+= 2.1.0 =
+* Renamed the plugin to Nubivio Healthcare Security Hardening
+* Admin CSS and JavaScript are now enqueued instead of printed inline
+* The security.txt and PGP key files are now located via get_home_path() so they land at the public site root on subdirectory and custom installs
+* Internal option, cron and nonce keys renamed to the new namespace
+
 = 2.0.0 =
 * Settings page for all options
 * internet.nl compliant Content-Security-Policy baseline with Report-Only mode
@@ -81,6 +87,9 @@ No. The header and security.txt features work on any site. The form section only
 * Gravity Forms email-domain blocking, shown only when Gravity Forms is active
 
 == Upgrade Notice ==
+
+= 2.1.0 =
+Plugin renamed and code updated to meet WordPress.org review requirements. Settings move to Settings, Nubivio Security.
 
 = 2.0.0 =
 First public release.
