@@ -3,7 +3,7 @@
  * Plugin Name:       Nubivio Healthcare Security Hardening
  * Plugin URI:        https://github.com/nubivio/healthcare-security-hardening
  * Description:       Security headers, a self-renewing security.txt (RFC 9116) and advanced form protection for healthcare related WordPress sites. Built for general practitioners, psychologists and other healthcare professionals. Recommended for NIS2, GDPR & NEN7510 compliance.
- * Version:           2.1.0
+ * Version:           2.1.1
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Nubivio
@@ -11,6 +11,10 @@
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       nubivio-healthcare-security-hardening
+ *
+ * Note: the plugin folder/slug is "nubivio-healthcare-security-hardening", so this
+ * Text Domain matches the slug. Plugin Check may warn when run from a differently
+ * named folder; that is expected until the directory uses the final slug.
  */
 
 if (!defined('ABSPATH')) {
@@ -19,7 +23,7 @@ if (!defined('ABSPATH')) {
 
 final class Nubivio_HSH {
 
-    const VERSION   = '2.1.0';
+    const VERSION   = '2.1.1';
     const OPTION    = 'nubivio_hsh_options';
     const CRON_HOOK = 'nubivio_hsh_daily';
     const SLUG      = 'nubivio-healthcare-security-hardening';
@@ -231,6 +235,25 @@ final class Nubivio_HSH {
         return rtrim(get_home_path(), '/\\');
     }
 
+    /**
+     * Initialise and return the WP_Filesystem instance.
+     *
+     * All file reads, writes and deletes go through this so the plugin uses the
+     * WP_Filesystem API instead of direct PHP filesystem calls.
+     *
+     * @return WP_Filesystem_Base|null
+     */
+    private function fs() {
+        global $wp_filesystem;
+        if (!function_exists('WP_Filesystem')) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+        if (!WP_Filesystem()) {
+            return null;
+        }
+        return $wp_filesystem;
+    }
+
     private function security_txt_path() {
         return $this->home_path() . '/.well-known/security.txt';
     }
@@ -299,15 +322,19 @@ final class Nubivio_HSH {
             $this->delete_pgp_key_file();
             return false;
         }
+        $fs = $this->fs();
+        if (!$fs) {
+            return false;
+        }
         $dir = $this->security_txt_dir();
-        if (!is_dir($dir)) {
+        if (!$fs->is_dir($dir)) {
             wp_mkdir_p($dir);
         }
-        if (!is_dir($dir) || !is_writable($dir)) {
+        if (!$fs->is_dir($dir) || !$fs->is_writable($dir)) {
             return false;
         }
         $this->write_pgp_key_file();
-        return @file_put_contents($this->security_txt_path(), $this->build_security_txt(), LOCK_EX) !== false;
+        return $fs->put_contents($this->security_txt_path(), $this->build_security_txt(), FS_CHMOD_FILE);
     }
 
     /* PGP public key (hosted, linked from security.txt as Encryption) */
@@ -334,26 +361,33 @@ final class Nubivio_HSH {
             $this->delete_pgp_key_file();
             return false;
         }
-        $dir = $this->security_txt_dir();
-        if (!is_dir($dir)) {
-            wp_mkdir_p($dir);
-        }
-        if (!is_dir($dir) || !is_writable($dir)) {
+        $fs = $this->fs();
+        if (!$fs) {
             return false;
         }
-        return @file_put_contents($this->pgp_key_path(), $key, LOCK_EX) !== false;
+        $dir = $this->security_txt_dir();
+        if (!$fs->is_dir($dir)) {
+            wp_mkdir_p($dir);
+        }
+        if (!$fs->is_dir($dir) || !$fs->is_writable($dir)) {
+            return false;
+        }
+        return $fs->put_contents($this->pgp_key_path(), $key, FS_CHMOD_FILE);
     }
 
     public function delete_pgp_key_file() {
-        if (file_exists($this->pgp_key_path())) {
-            @unlink($this->pgp_key_path());
+        $fs = $this->fs();
+        $path = $this->pgp_key_path();
+        if ($fs && $fs->exists($path)) {
+            wp_delete_file($path);
         }
     }
 
     public function delete_security_txt_file() {
+        $fs = $this->fs();
         $path = $this->security_txt_path();
-        if (file_exists($path)) {
-            @unlink($path);
+        if ($fs && $fs->exists($path)) {
+            wp_delete_file($path);
         }
     }
 
@@ -366,8 +400,9 @@ final class Nubivio_HSH {
 
         $path = $this->security_txt_path();
         $refresh = true;
-        if (file_exists($path)) {
-            $content = (string) @file_get_contents($path);
+        $fs = $this->fs();
+        if ($fs && $fs->exists($path)) {
+            $content = (string) $fs->get_contents($path);
             if (preg_match('/^Expires:\s*(.+)$/mi', $content, $m)) {
                 $ts = strtotime(trim($m[1]));
                 if ($ts && $ts - time() > 30 * DAY_IN_SECONDS) {
@@ -415,10 +450,11 @@ final class Nubivio_HSH {
 
     public function security_txt_status() {
         $path = $this->security_txt_path();
-        if (!file_exists($path)) {
+        $fs = $this->fs();
+        if (!$fs || !$fs->exists($path)) {
             return array('mode' => 'dynamic', 'expires' => null, 'days' => null);
         }
-        $content = (string) @file_get_contents($path);
+        $content = (string) $fs->get_contents($path);
         $expires = null;
         $days = null;
         if (preg_match('/^Expires:\s*(.+)$/mi', $content, $m)) {
