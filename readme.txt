@@ -4,7 +4,7 @@ Tags: security, headers, security-txt, csp, hsts
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.1.1
+Stable tag: 2.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,7 +69,14 @@ It covers the public web hardening part: transport security, browser protections
 = Is Gravity Forms required? =
 No. The header and security.txt features work on any site. The form section only appears when Gravity Forms is active.
 
+== Screenshots ==
+
+1. The Nubivio Security settings page: header status card with the live security.txt state, the security headers section with per-header toggles, and the RFC 9116 security.txt fields.
+
 == Changelog ==
+
+= 2.1.2 =
+* Added plugin icon, banner and a settings page screenshot for the WordPress.org listing
 
 = 2.1.1 =
 * All filesystem reads, writes and deletes now go through the WP_Filesystem API and wp_delete_file()
@@ -90,6 +97,9 @@ No. The header and security.txt features work on any site. The form section only
 * Gravity Forms email-domain blocking, shown only when Gravity Forms is active
 
 == Upgrade Notice ==
+
+= 2.1.2 =
+Adds listing assets (icon, banner, screenshot). No functional changes.
 
 = 2.1.1 =
 Filesystem operations now use the WP_Filesystem API.
