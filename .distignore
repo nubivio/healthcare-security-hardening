@@ -1,0 +1,15 @@
+# Files and folders that should NOT ship to WordPress.org trunk.
+# Only the plugin runtime files (php, readme.txt, assets/) get deployed.
+
+/.git
+/.github
+/.wordpress-org
+/.distignore
+/.gitignore
+/.gitattributes
+/README.md
+/docs
+/node_modules
+*.zip
+*.log
+.DS_Store

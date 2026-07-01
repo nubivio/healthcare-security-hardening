@@ -1,0 +1,40 @@
+name: Deploy to WordPress.org
+
+# Publishes the plugin to the WordPress.org SVN repository whenever a GitHub
+# release is published. WordPress.org SVN is a release system, so only tagged,
+# ready-to-ship versions are deployed.
+#
+# Requires two repository secrets (Settings -> Secrets and variables -> Actions):
+#   SVN_USERNAME  -> your WordPress.org username (nubivio)
+#   SVN_PASSWORD  -> your WordPress.org SVN password (not your login password)
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    name: Deploy to WordPress.org SVN
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Derive version from tag
+        id: version
+        # Strip a leading "v" so tag v2.1.1 maps to WordPress version 2.1.1
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: WordPress Plugin Deploy
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          # The WordPress.org slug differs from this repo's name.
+          SLUG: nubivio-healthcare-security-hardening
+          # Listing assets (icon, banner, screenshots) live here and are pushed
+          # to SVN /assets, separate from the shipped plugin code.
+          ASSETS_DIR: .wordpress-org
+        with:
+          # Use the version derived from the release tag as the SVN tag.
+          version: ${{ steps.version.outputs.version }}
