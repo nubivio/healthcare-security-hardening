@@ -1,0 +1,955 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Nubivio Healthcare Security Hardening 2.2.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nubivio-healthcare-security-hardening\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-07-01 12:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: nubivio-hsh-makepot\n"
+"X-Domain: nubivio-healthcare-security-hardening\n"
+
+#: admin/dashboard.php:221
+msgid "%d day left"
+msgid_plural "%d days left"
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/dashboard.php:89
+msgid "%d high"
+msgid_plural "%d high"
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/dashboard.php:99
+msgid "%d low"
+msgid_plural "%d low"
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/dashboard.php:94
+msgid "%d medium"
+msgid_plural "%d medium"
+msgstr[0] ""
+msgstr[1] ""
+
+#: healthcare-security-hardening.php:868
+msgid "Valid - %d day left"
+msgid_plural "Valid - %d days left"
+msgstr[0] ""
+msgstr[1] ""
+
+#: healthcare-security-hardening.php:902
+msgid "%d / 100"
+msgstr ""
+
+#: healthcare-security-hardening.php:934
+msgid "<strong>Caution:</strong> only enable if you submit the domain to hstspreload.org. Combines with includeSubDomains and is hard to reverse."
+msgstr ""
+
+#: healthcare-security-hardening.php:843
+msgid "A scan is already running. Please wait for it to finish."
+msgstr ""
+
+#: healthcare-security-hardening.php:841
+msgid "A scan ran recently. Please wait a few minutes before scanning again."
+msgstr ""
+
+#: includes/class-docs.php:226
+msgid "A vulnerability disclosure contact is published via security.txt (RFC 9116), supporting Article 14 coordinated disclosure."
+msgstr ""
+
+#: healthcare-security-hardening.php:1051
+msgid "Acknowledgments URL"
+msgstr ""
+
+#: includes/class-docs.php:122
+msgid "Acknowledgments:"
+msgstr ""
+
+#: healthcare-security-hardening.php:993
+msgid "Actively remove deprecated headers (X-XSS-Protection, Expect-CT)"
+msgstr ""
+
+#: includes/class-nis2.php:54
+msgid "Activity logging"
+msgstr ""
+
+#: healthcare-security-hardening.php:1064
+msgid "Adds a small Nubivio signature comment to security.txt. Turn it off to keep the file plain."
+msgstr ""
+
+#: admin/dashboard.php:77 includes/class-docs.php:335
+msgid "Amber"
+msgstr ""
+
+#: admin/dashboard.php:32
+msgid "Attack-surface minimisation"
+msgstr ""
+
+#: includes/class-nis2.php:55
+msgid "Automatic updates"
+msgstr ""
+
+#: includes/class-nis2.php:52
+msgid "Backups"
+msgstr ""
+
+#: healthcare-security-hardening.php:1073
+msgid "Block email domains in forms"
+msgstr ""
+
+#: healthcare-security-hardening.php:1075
+msgid "Blocked domains"
+msgstr ""
+
+#: healthcare-security-hardening.php:993
+msgid "Both are deprecated. X-XSS-Protection can open new holes in old browsers; Expect-CT no longer does anything."
+msgstr ""
+
+#: includes/class-docs.php:264
+msgid "CRA (plugin readiness)"
+msgstr ""
+
+#: includes/class-docs.php:324
+msgid "CRA reporting deadlines (awareness)"
+msgstr ""
+
+#: admin/dashboard.php:109
+msgid "CRA: plugin readiness"
+msgstr ""
+
+#: healthcare-security-hardening.php:1046
+msgid "CSAF URL"
+msgstr ""
+
+#: includes/class-gdpr.php:58
+msgid "CSP enforces self only, but third-party scripts are loading: contradiction. Review the policy or the scripts."
+msgstr ""
+
+#: healthcare-security-hardening.php:889
+msgid "Canonical"
+msgstr ""
+
+#: admin/dashboard.php:230
+msgid "Canonical correctness"
+msgstr ""
+
+#: admin/dashboard.php:31
+msgid "Clickjacking hardening"
+msgstr ""
+
+#: healthcare-security-hardening.php:975
+msgid "Clickjacking protection. CSP frame-ancestors is the modern equivalent, but internet.nl still checks this header."
+msgstr ""
+
+#: admin/dashboard.php:38 healthcare-security-hardening.php:831
+msgid "Compliance"
+msgstr ""
+
+#: admin/dashboard.php:254
+msgid "Compliance documents"
+msgstr ""
+
+#: admin/dashboard.php:260 includes/class-docs.php:246 includes/class-docs.php:248
+msgid "Compliance report"
+msgstr ""
+
+#: healthcare-security-hardening.php:839
+msgid "Compliance scan complete."
+msgstr ""
+
+#: healthcare-security-hardening.php:898
+msgid "Compliance score"
+msgstr ""
+
+#: admin/dashboard.php:64
+msgid "Compliance score %d of 100"
+msgstr ""
+
+#: includes/class-health.php:74
+msgid "Configured and sent on a live response."
+msgstr ""
+
+#: includes/class-health.php:75
+msgid "Configured but not sent; a proxy or theme may strip it."
+msgstr ""
+
+#: admin/dashboard.php:259
+msgid "Conformity declaration"
+msgstr ""
+
+#: includes/class-docs.php:212 includes/class-docs.php:214
+msgid "Conformity self-assessment declaration"
+msgstr ""
+
+#: healthcare-security-hardening.php:1006
+msgid "Contact"
+msgstr ""
+
+#: admin/dashboard.php:236
+msgid "Contact present"
+msgstr ""
+
+#: includes/class-docs.php:116 includes/class-docs.php:216
+msgid "Contact:"
+msgstr ""
+
+#: admin/dashboard.php:34
+msgid "Content hardening"
+msgstr ""
+
+#: healthcare-security-hardening.php:939
+msgid "Content-Security-Policy"
+msgstr ""
+
+#: includes/class-health.php:202
+msgid "Could not determine the latest WordPress version."
+msgstr ""
+
+#: includes/class-health.php:233
+msgid "Could not enumerate users over REST."
+msgstr ""
+
+#: includes/class-health.php:60
+msgid "Could not verify live; showing configured values. A hardened host may block self-requests."
+msgstr ""
+
+#: admin/dashboard.php:258
+msgid "CycloneDX SBOM (JSON)"
+msgstr ""
+
+#: admin/dashboard.php:33
+msgid "Data minimisation"
+msgstr ""
+
+#: includes/class-health.php:117 includes/class-health.php:123
+msgid "Debug display"
+msgstr ""
+
+#: includes/class-health.php:125
+msgid "Debug output is not displayed to visitors."
+msgstr ""
+
+#: healthcare-security-hardening.php:986
+msgid "Disables browser features the site does not use (camera, microphone, geolocation)."
+msgstr ""
+
+#: includes/class-docs.php:220
+msgid "EU Cyber Resilience Act (CRA)"
+msgstr ""
+
+#: healthcare-security-hardening.php:1007
+msgid "Email address or URL, one per line. An email gets a <code>mailto:</code> prefix automatically."
+msgstr ""
+
+#: healthcare-security-hardening.php:1002
+msgid "Enable security.txt"
+msgstr ""
+
+#: healthcare-security-hardening.php:1036
+msgid "Encryption URL"
+msgstr ""
+
+#: includes/class-nis2.php:50
+msgid "Encryption in transit (HTTPS/HSTS)"
+msgstr ""
+
+#: includes/class-docs.php:319
+msgid "Enforce a Content-Security-Policy once tested in Report-Only."
+msgstr ""
+
+#: includes/class-gdpr.php:64
+msgid "Enforced CSP restricts scripts to first party and no third-party scripts were detected."
+msgstr ""
+
+#: healthcare-security-hardening.php:930
+msgid "Enforces HTTPS. Sent on HTTPS connections only."
+msgstr ""
+
+#: healthcare-security-hardening.php:1078
+msgid "Error message"
+msgstr ""
+
+#: admin/dashboard.php:214
+msgid "Expires validity"
+msgstr ""
+
+#: healthcare-security-hardening.php:883 includes/class-docs.php:309
+msgid "Expires: %s"
+msgstr ""
+
+#: healthcare-security-hardening.php:874
+msgid "Expiring (%dd) - auto refreshed"
+msgstr ""
+
+#: includes/class-docs.php:272
+msgid "Finding"
+msgstr ""
+
+#: includes/class-docs.php:262
+msgid "Findings by framework"
+msgstr ""
+
+#: healthcare-security-hardening.php:966
+msgid "For a fully green internet.nl result, pick <code>no-referrer</code> or <code>same-origin</code>."
+msgstr ""
+
+#: includes/class-gdpr.php:72
+msgid "Forms collect personal data but no consent mechanism was detected."
+msgstr ""
+
+#: admin/dashboard.php:110 includes/class-docs.php:265
+msgid "GDPR"
+msgstr ""
+
+#: includes/class-docs.php:221
+msgid "General Data Protection Regulation (GDPR)"
+msgstr ""
+
+#: includes/class-docs.php:83
+msgid "Generated by Nubivio Healthcare Security Hardening for %1$s on %2$s."
+msgstr ""
+
+#: admin/dashboard.php:255
+msgid "Generated from your own settings. Printable HTML you can save as PDF from the browser. These are starting-point documents, not certifications."
+msgstr ""
+
+#: healthcare-security-hardening.php:1071
+msgid "Gravity Forms"
+msgstr ""
+
+#: admin/dashboard.php:77 includes/class-docs.php:333
+msgid "Green"
+msgstr ""
+
+#: healthcare-security-hardening.php:930
+msgid "HSTS (Strict-Transport-Security)"
+msgstr ""
+
+#: includes/class-health.php:107
+msgid "HTTPS"
+msgstr ""
+
+#: healthcare-security-hardening.php:830
+msgid "Hardening"
+msgstr ""
+
+#: admin/dashboard.php:170 includes/class-docs.php:286
+msgid "Header"
+msgstr ""
+
+#: includes/class-docs.php:280
+msgid "Header evidence"
+msgstr ""
+
+#: includes/class-health.php:69
+msgid "Header: %s"
+msgstr ""
+
+#: healthcare-security-hardening.php:822
+msgid "Healthcare Security"
+msgstr ""
+
+#: healthcare-security-hardening.php:1041
+msgid "Hiring URL"
+msgstr ""
+
+#: includes/class-docs.php:114
+msgid "How to report"
+msgstr ""
+
+#: includes/class-docs.php:111
+msgid "Introduction"
+msgstr ""
+
+#: includes/class-docs.php:320
+msgid "Keep plugins, themes and WordPress core up to date."
+msgstr ""
+
+#: healthcare-security-hardening.php:1021
+msgid "Keep under 365. internet.nl wants an expiry under one year."
+msgstr ""
+
+#: admin/dashboard.php:82
+msgid "Last scanned %s ago"
+msgstr ""
+
+#: healthcare-security-hardening.php:1048
+msgid "Link to your CSAF provider metadata, if you publish advisories."
+msgstr ""
+
+#: includes/class-health.php:58
+msgid "Live header verification"
+msgstr ""
+
+#: admin/dashboard.php:171
+msgid "Live status"
+msgstr ""
+
+#: admin/dashboard.php:165
+msgid "Live verification was unavailable, so the table shows configured headers. A hardened host may block self-requests."
+msgstr ""
+
+#: includes/class-docs.php:284
+msgid "Live verification was unavailable; showing configured headers."
+msgstr ""
+
+#: includes/class-cra.php:154
+msgid "Low average rating (%s of 5)."
+msgstr ""
+
+#: includes/class-cra.php:140
+msgid "Low support resolution rate (%d%% of recent threads resolved)."
+msgstr ""
+
+#: admin/dashboard.php:210
+msgid "Maps to CRA Art. 14 (coordinated vulnerability disclosure)."
+msgstr ""
+
+#: healthcare-security-hardening.php:1012
+msgid "Message to researchers"
+msgstr ""
+
+#: includes/class-docs.php:303
+msgid "Mode: %s"
+msgstr ""
+
+#: includes/class-nis2.php:51
+msgid "Multi-factor authentication"
+msgstr ""
+
+#: includes/class-docs.php:223
+msgid "NEN 7510 (Dutch healthcare information security)"
+msgstr ""
+
+#: admin/dashboard.php:111 includes/class-docs.php:266
+msgid "NIS2 Art. 21"
+msgstr ""
+
+#: admin/dashboard.php:28
+msgid "NIS2 Art. 21: encryption in transit"
+msgstr ""
+
+#: includes/class-docs.php:222
+msgid "NIS2 Directive (Art. 21)"
+msgstr ""
+
+#: includes/class-nis2.php:76
+msgid "No %s detected (NIS2 Art. 21)."
+msgstr ""
+
+#: admin/dashboard.php:122
+msgid "No issues detected."
+msgstr ""
+
+#: includes/class-docs.php:252
+msgid "No scan data yet. Run a compliance scan first, then generate this report."
+msgstr ""
+
+#: admin/dashboard.php:53
+msgid "No scan has run yet. Run a compliance scan to see your score, findings and evidence."
+msgstr ""
+
+#: healthcare-security-hardening.php:878
+msgid "Not created"
+msgstr ""
+
+#: includes/class-health.php:50
+msgid "Not created or expired."
+msgstr ""
+
+#: includes/class-cra.php:74
+msgid "Not in the public WordPress.org directory; cannot verify update or compatibility status."
+msgstr ""
+
+#: includes/class-cra.php:86
+msgid "Not updated in %d days; likely abandoned."
+msgstr ""
+
+#: healthcare-security-hardening.php:583
+msgid "Nubivio Healthcare Security Hardening"
+msgstr ""
+
+#: healthcare-security-hardening.php:584
+msgid "Nubivio Security"
+msgstr ""
+
+#: healthcare-security-hardening.php:939
+msgid "Off by default because a strict policy can break inline scripts and third-party tags. The baseline below is internet.nl compliant. Test in Report-Only, add the domains your site needs, then enforce."
+msgstr ""
+
+#: healthcare-security-hardening.php:1076
+msgid "One per line or comma separated, without @. For example <code>example.com</code>."
+msgstr ""
+
+#: admin/dashboard.php:40
+msgid "Optional CRA, GDPR and NIS2 checks plus site health, built around the headers and security.txt this plugin already enforces. Nothing here changes your hardening; it verifies and documents it."
+msgstr ""
+
+#: includes/class-docs.php:125
+msgid "Our commitment"
+msgstr ""
+
+#: admin/dashboard.php:242
+msgid "PGP / Encryption available"
+msgstr ""
+
+#: healthcare-security-hardening.php:1058
+msgid "PGP public key"
+msgstr ""
+
+#: includes/class-health.php:93
+msgid "PHP %s is approaching end of life; plan an upgrade."
+msgstr ""
+
+#: includes/class-health.php:87
+msgid "PHP %s is end of life."
+msgstr ""
+
+#: includes/class-health.php:99
+msgid "PHP %s is in the supported window."
+msgstr ""
+
+#: includes/class-health.php:85 includes/class-health.php:91 includes/class-health.php:97
+msgid "PHP version"
+msgstr ""
+
+#: healthcare-security-hardening.php:1059
+msgid "Paste your ASCII-armored public key. The plugin hosts it at <code>/.well-known/openpgp-key.txt</code> and links it from security.txt as <code>Encryption</code> automatically. A manual Encryption URL above takes precedence."
+msgstr ""
+
+#: healthcare-security-hardening.php:986
+msgid "Permissions-Policy"
+msgstr ""
+
+#: includes/class-docs.php:115
+msgid "Please send reports to the contact below."
+msgstr ""
+
+#: includes/class-cra.php:62
+msgid "Plugin not found in the WordPress.org directory; may be removed or closed."
+msgstr ""
+
+#: healthcare-security-hardening.php:1043
+msgid "Point security people at your open roles."
+msgstr ""
+
+#: healthcare-security-hardening.php:1031
+msgid "Policy URL"
+msgstr ""
+
+#: includes/class-docs.php:119
+msgid "Policy reference:"
+msgstr ""
+
+#: healthcare-security-hardening.php:1024
+msgid "Preferred-Languages"
+msgstr ""
+
+#: includes/class-health.php:42
+msgid "Present and valid, %d days until expiry."
+msgstr ""
+
+#: admin/dashboard.php:29 admin/dashboard.php:30
+msgid "Product security hardening / GDPR script control"
+msgstr ""
+
+#: includes/class-health.php:231 includes/class-health.php:240 includes/class-health.php:246
+msgid "REST user enumeration"
+msgstr ""
+
+#: includes/class-docs.php:316
+msgid "Recommendations"
+msgstr ""
+
+#: admin/dashboard.php:77 includes/class-docs.php:337
+msgid "Red"
+msgstr ""
+
+#: healthcare-security-hardening.php:947
+msgid "Referrer-Policy"
+msgstr ""
+
+#: healthcare-security-hardening.php:1019
+msgid "Refresh Expires after (days)"
+msgstr ""
+
+#: healthcare-security-hardening.php:1073
+msgid "Rejects email fields ending in a blocked domain."
+msgstr ""
+
+#: healthcare-security-hardening.php:942
+msgid "Report-Only mode (test without blocking anything)"
+msgstr ""
+
+#: includes/class-cra.php:125
+msgid "Requires PHP %s, which is end of life."
+msgstr ""
+
+#: includes/class-docs.php:318
+msgid "Resolve HIGH findings first, then MEDIUM."
+msgstr ""
+
+#: admin/dashboard.php:46
+msgid "Run compliance scan"
+msgstr ""
+
+#: includes/class-health.php:220
+msgid "Running %1$s; latest is %2$s."
+msgstr ""
+
+#: healthcare-security-hardening.php:1086
+msgid "Save settings"
+msgstr ""
+
+#: includes/class-docs.php:132
+msgid "Scope"
+msgstr ""
+
+#: includes/class-docs.php:258
+msgid "Score"
+msgstr ""
+
+#: healthcare-security-hardening.php:824
+msgid "Security hardening for WordPress. Headers, security.txt and form protection, aligned with the internet.nl test."
+msgstr ""
+
+#: healthcare-security-hardening.php:927
+msgid "Security headers"
+msgstr ""
+
+#: admin/dashboard.php:163
+msgid "Security headers as compliance evidence"
+msgstr ""
+
+#: healthcare-security-hardening.php:864
+msgid "Served dynamically"
+msgstr ""
+
+#: includes/class-health.php:34
+msgid "Served dynamically (docroot not writable). Still resolvable."
+msgstr ""
+
+#: healthcare-security-hardening.php:577
+msgid "Settings"
+msgstr ""
+
+#: healthcare-security-hardening.php:815
+msgid "Settings saved."
+msgstr ""
+
+#: includes/class-docs.php:272
+msgid "Severity"
+msgstr ""
+
+#: healthcare-security-hardening.php:1064
+msgid "Show Nubivio some love"
+msgstr ""
+
+#: healthcare-security-hardening.php:1013
+msgid "Shown as comment lines at the top of the file. One per line."
+msgstr ""
+
+#: admin/dashboard.php:142
+msgid "Site health"
+msgstr ""
+
+#: includes/class-health.php:111
+msgid "Site is not served over HTTPS."
+msgstr ""
+
+#: includes/class-health.php:110
+msgid "Site is served over HTTPS."
+msgstr ""
+
+#: includes/class-cra.php:93
+msgid "Stale: not updated in %d days."
+msgstr ""
+
+#: healthcare-security-hardening.php:859 includes/class-docs.php:286
+msgid "Status"
+msgstr ""
+
+#: admin/dashboard.php:172
+msgid "Supports"
+msgstr ""
+
+#: includes/class-docs.php:228
+msgid "Technical measures under Article 21 are assessed, including encryption in transit, backups, access control and logging."
+msgstr ""
+
+#: healthcare-security-hardening.php:893
+msgid "Test your domain"
+msgstr ""
+
+#: includes/class-cra.php:114
+msgid "Tested only up to WordPress %s; one major version behind."
+msgstr ""
+
+#: includes/class-cra.php:107
+msgid "Tested only up to WordPress %s; two or more major versions behind."
+msgstr ""
+
+#: includes/class-health.php:248
+msgid "The REST users endpoint does not expose users publicly."
+msgstr ""
+
+#: includes/class-health.php:242
+msgid "The REST users endpoint lists users publicly."
+msgstr ""
+
+#: healthcare-security-hardening.php:853
+msgid "The compliance dashboard is unavailable."
+msgstr ""
+
+#: healthcare-security-hardening.php:755
+msgid "The document generator is unavailable."
+msgstr ""
+
+#: healthcare-security-hardening.php:845
+msgid "The scanner module is unavailable."
+msgstr ""
+
+#: includes/class-gdpr.php:41
+msgid "Third-party script from %s loads without a detected consent mechanism."
+msgstr ""
+
+#: healthcare-security-hardening.php:562
+msgid "This email domain is not allowed."
+msgstr ""
+
+#: includes/class-docs.php:217
+msgid "This is a self-assessment, not a certification. It records the current posture of the public web property and is intended as a starting point for a formal compliance programme."
+msgstr ""
+
+#: admin/dashboard.php:47
+msgid "This may take a few seconds. Scans query the WordPress.org Plugins API (see External Services in the readme)."
+msgstr ""
+
+#: includes/class-docs.php:135
+msgid "This policy applies to the public web property at %s. This document supports the vulnerability disclosure requirements of the EU Cyber Resilience Act, Article 14."
+msgstr ""
+
+#: includes/class-docs.php:90
+msgid "Tip: use your browser Print function and choose Save as PDF to keep a copy."
+msgstr ""
+
+#: includes/class-docs.php:227
+msgid "Transport encryption and browser protections are enforced. Data minimisation is supported through Referrer-Policy and third-party script control."
+msgstr ""
+
+#: includes/class-docs.php:325
+msgid "Under the CRA, actively exploited vulnerabilities require an early warning within 24 hours, a notification within 72 hours, and a final report within 14 days. This is awareness information, not legal advice."
+msgstr ""
+
+#: includes/class-docs.php:42
+msgid "Unknown document type."
+msgstr ""
+
+#: includes/class-cra.php:162
+msgid "Very small install base (under 100 active installs)."
+msgstr ""
+
+#: healthcare-security-hardening.php:910
+msgid "View active response headers"
+msgstr ""
+
+#: admin/dashboard.php:257 includes/class-docs.php:106 includes/class-docs.php:108
+msgid "Vulnerability Disclosure Policy"
+msgstr ""
+
+#: includes/class-health.php:119
+msgid "WP_DEBUG_DISPLAY is on; errors may leak to visitors."
+msgstr ""
+
+#: includes/class-docs.php:112
+msgid "We take the security of our systems seriously and we value the security community. The responsible disclosure of security vulnerabilities helps us keep our users safe. This policy sets out how to report vulnerabilities to us."
+msgstr ""
+
+#: includes/class-docs.php:127
+msgid "We will acknowledge receipt of your report in a timely manner."
+msgstr ""
+
+#: includes/class-docs.php:128
+msgid "We will keep you informed of our progress."
+msgstr ""
+
+#: includes/class-docs.php:129
+msgid "We will not take legal action against researchers who act in good faith and follow this policy."
+msgstr ""
+
+#: includes/class-nis2.php:53
+msgid "Web application firewall"
+msgstr ""
+
+#: includes/class-docs.php:229
+msgid "Web hardening measures relevant to Dutch healthcare information security are documented, as a building block within a wider NEN 7510 programme."
+msgstr ""
+
+#: includes/class-health.php:200 includes/class-health.php:216
+msgid "WordPress core"
+msgstr ""
+
+#: healthcare-security-hardening.php:999
+msgid "Written to <code>/.well-known/security.txt</code> and refreshed automatically so <code>Expires</code> never lapses. If the file cannot be written (read-only docroot), it is served dynamically instead."
+msgstr ""
+
+#: healthcare-security-hardening.php:971
+msgid "X-Content-Type-Options: nosniff"
+msgstr ""
+
+#: healthcare-security-hardening.php:975
+msgid "X-Frame-Options"
+msgstr ""
+
+#: includes/class-health.php:132
+msgid "XML-RPC"
+msgstr ""
+
+#: includes/class-health.php:135
+msgid "XML-RPC appears enabled; consider disabling if unused."
+msgstr ""
+
+#: includes/class-health.php:136
+msgid "XML-RPC is disabled."
+msgstr ""
+
+#: healthcare-security-hardening.php:749
+msgid "You are not allowed to download compliance documents."
+msgstr ""
+
+#: healthcare-security-hardening.php:691
+msgid "You are not allowed to run a compliance scan."
+msgstr ""
+
+#: healthcare-security-hardening.php:1033
+msgid "Your Coordinated Vulnerability Disclosure policy."
+msgstr ""
+
+#: healthcare-security-hardening.php:1053
+msgid "Your hall of fame for reporters."
+msgstr ""
+
+#: healthcare-security-hardening.php:1046
+msgid "advisories"
+msgstr ""
+
+#: healthcare-security-hardening.php:1041
+msgid "careers / vacatures"
+msgstr ""
+
+#: admin/dashboard.php:233
+msgid "check"
+msgstr ""
+
+#: admin/dashboard.php:184 includes/class-docs.php:292
+msgid "configured"
+msgstr ""
+
+#: admin/dashboard.php:232
+msgid "correct"
+msgstr ""
+
+#: admin/dashboard.php:217
+msgid "dynamic"
+msgstr ""
+
+#: healthcare-security-hardening.php:933
+msgid "includeSubDomains"
+msgstr ""
+
+#: healthcare-security-hardening.php:942
+msgid "internet.nl only credits an enforced policy. Turn this off once your site works under the policy."
+msgstr ""
+
+#: healthcare-security-hardening.php:1038
+msgid "internet.nl recommends this when Contact is an email."
+msgstr ""
+
+#: healthcare-security-hardening.php:932
+msgid "max-age (seconds)"
+msgstr ""
+
+#: admin/dashboard.php:182 admin/dashboard.php:239 includes/class-docs.php:290
+msgid "missing"
+msgstr ""
+
+#: healthcare-security-hardening.php:952
+msgid "no-referrer  (internet.nl: Good)"
+msgstr ""
+
+#: healthcare-security-hardening.php:958
+msgid "no-referrer-when-downgrade  (internet.nl: Bad)"
+msgstr ""
+
+#: admin/dashboard.php:225
+msgid "not valid"
+msgstr ""
+
+#: admin/dashboard.php:245 healthcare-security-hardening.php:1012 healthcare-security-hardening.php:1031 healthcare-security-hardening.php:1051 healthcare-security-hardening.php:1058
+msgid "optional"
+msgstr ""
+
+#: healthcare-security-hardening.php:956
+msgid "origin  (internet.nl: Bad)"
+msgstr ""
+
+#: healthcare-security-hardening.php:957
+msgid "origin-when-cross-origin  (internet.nl: Bad)"
+msgstr ""
+
+#: healthcare-security-hardening.php:934
+msgid "preload"
+msgstr ""
+
+#: healthcare-security-hardening.php:1036
+msgid "recommended"
+msgstr ""
+
+#: healthcare-security-hardening.php:1006
+msgid "required"
+msgstr ""
+
+#: healthcare-security-hardening.php:953
+msgid "same-origin  (internet.nl: Good)"
+msgstr ""
+
+#: healthcare-security-hardening.php:862 healthcare-security-hardening.php:998 includes/class-health.php:32 includes/class-health.php:38 includes/class-health.php:48
+msgid "security.txt"
+msgstr ""
+
+#: admin/dashboard.php:209
+msgid "security.txt as compliance evidence"
+msgstr ""
+
+#: includes/class-docs.php:299
+msgid "security.txt evidence"
+msgstr ""
+
+#: healthcare-security-hardening.php:918
+msgid "security.txt preview"
+msgstr ""
+
+#: admin/dashboard.php:181 includes/class-docs.php:290
+msgid "sent"
+msgstr ""
+
+#: healthcare-security-hardening.php:954
+msgid "strict-origin  (internet.nl: Warning)"
+msgstr ""
+
+#: healthcare-security-hardening.php:955
+msgid "strict-origin-when-cross-origin  (internet.nl: Warning)"
+msgstr ""
+
+#: healthcare-security-hardening.php:959
+msgid "unsafe-url  (internet.nl: Bad)"
+msgstr ""
+
+#: admin/dashboard.php:238 admin/dashboard.php:244
+msgid "yes"
+msgstr ""

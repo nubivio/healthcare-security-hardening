@@ -4,7 +4,7 @@ Tags: security, headers, security-txt, csp, hsts
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.1.2
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,11 +69,44 @@ It covers the public web hardening part: transport security, browser protections
 = Is Gravity Forms required? =
 No. The header and security.txt features work on any site. The form section only appears when Gravity Forms is active.
 
+== External Services ==
+
+The core hardening features (security headers and security.txt) make no external requests. The optional Compliance tab, introduced in 2.2.0, uses the following external services only when you run a scan (manually or via the optional scheduled scan). Nothing here runs on normal front-end page loads.
+
+**WordPress.org Plugins API**
+
+When a compliance scan runs, the plugin looks up each active plugin in the WordPress.org Plugins directory to check update currency and compatibility.
+
+* What is sent: the public plugin slug only (for example, "akismet"). No personal data, no site data.
+* When: only during a manual or scheduled compliance scan.
+* Endpoint: https://api.wordpress.org/plugins/info/1.0/{slug}.json and https://api.wordpress.org/core/version-check/1.7/
+* Caching: results are cached in a transient for 12 hours.
+* This is a first-party WordPress.org endpoint. Terms: https://wordpress.org/about/privacy/
+
+**Loopback self-request (header and REST probe)**
+
+When a compliance scan runs, the plugin makes a request to its own home URL to verify that the configured security headers are actually being sent and to check whether the REST users endpoint exposes user data.
+
+* What is sent: a normal HTTP GET to the site's own home URL. No third-party service is contacted.
+* When: only during a manual or scheduled compliance scan, or admin/cron context. Never on normal front-end page loads.
+* Timeout: short (8 seconds). Result cached in a transient for 10 minutes.
+* If the request fails (some hardened hosts block self-requests), the plugin falls back to showing configured values and reports that live verification was unavailable.
+
 == Screenshots ==
 
 1. The Nubivio Security settings page: header status card with the live security.txt state, the security headers section with per-header toggles, and the RFC 9116 security.txt fields.
+2. The Compliance tab: compliance score, per-framework findings, site health checks and the security headers and security.txt evidence panels.
 
 == Changelog ==
+
+= 2.2.0 =
+* New Compliance tab: CRA, GDPR and NIS2 scanning plus site health checks
+* Live verification that configured security headers are actually sent
+* security.txt and headers now scored and mapped to CRA / NIS2 / GDPR clauses
+* Compliance score with per-framework breakdown
+* Generators: Vulnerability Disclosure Policy, CycloneDX SBOM, EU/NEN 7510 conformity declaration
+* Printable compliance report (browser print to PDF, no added dependencies)
+* Existing header and security.txt hardening unchanged
 
 = 2.1.2 =
 * Added plugin icon, banner and a settings page screenshot for the WordPress.org listing
@@ -97,6 +130,9 @@ No. The header and security.txt features work on any site. The form section only
 * Gravity Forms email-domain blocking, shown only when Gravity Forms is active
 
 == Upgrade Notice ==
+
+= 2.2.0 =
+Adds an optional Compliance tab. Existing hardening is unchanged.
 
 = 2.1.2 =
 Adds listing assets (icon, banner, screenshot). No functional changes.

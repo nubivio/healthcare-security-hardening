@@ -54,3 +54,50 @@
 #nubivio-hsh .ns-by{font-size:12px;color:#A1A4AB;}
 #nubivio-hsh .ns-love-msg{display:none;margin:8px 0 0 52px;font-size:13px;font-weight:600;color:var(--danger);}
 @media(max-width:782px){#nubivio-hsh .ns-grid-2{grid-template-columns:1fr;}#nubivio-hsh .ns-sub,#nubivio-hsh .ns-desc{margin-left:0;}}
+
+/* v2.2.0 compliance layer */
+#nubivio-hsh .nav-tab-wrapper.ns-tabs{margin:0 0 18px;border-bottom:1px solid var(--mist);}
+#nubivio-hsh .ns-tabs .nav-tab{font-size:13px;font-weight:600;}
+#nubivio-hsh .ns-tabs .nav-tab-active{color:var(--p);border-bottom-color:#fff;}
+#nubivio-hsh .ns-score-badge{display:inline-block;font-size:13px;font-weight:700;padding:4px 12px;border-radius:999px;text-decoration:none;border:1px solid transparent;}
+#nubivio-hsh .ns-score-badge.ns-band-green{background:var(--ok-bg);color:#0c7a4f;}
+#nubivio-hsh .ns-score-badge.ns-band-amber{background:var(--warn-bg);color:#9a6a16;}
+#nubivio-hsh .ns-score-badge.ns-band-red{background:#fbe4e4;color:#b3261e;}
+#nubivio-hsh .ns-scan-form{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:6px;}
+#nubivio-hsh .ns-score-card{display:flex;align-items:center;gap:26px;flex-wrap:wrap;}
+#nubivio-hsh .ns-score-ring .ns-ring-bg{stroke:var(--mist);}
+#nubivio-hsh .ns-score-ring.ns-band-green .ns-ring-fg{stroke:var(--ok);}
+#nubivio-hsh .ns-score-ring.ns-band-amber .ns-ring-fg{stroke:var(--warn);}
+#nubivio-hsh .ns-score-ring.ns-band-red .ns-ring-fg{stroke:var(--danger);}
+#nubivio-hsh .ns-ring-num{font-size:30px;font-weight:800;fill:var(--p2);}
+#nubivio-hsh .ns-score-meta{display:flex;flex-direction:column;gap:8px;}
+#nubivio-hsh .ns-band-pill-green{background:var(--ok-bg);color:#0c7a4f;}
+#nubivio-hsh .ns-band-pill-amber{background:var(--warn-bg);color:#9a6a16;}
+#nubivio-hsh .ns-band-pill-red{background:#fbe4e4;color:#b3261e;}
+#nubivio-hsh .ns-chip-row{display:flex;gap:8px;flex-wrap:wrap;}
+#nubivio-hsh .ns-chip{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;}
+#nubivio-hsh .ns-chip-high{background:#fbe4e4;color:#b3261e;}
+#nubivio-hsh .ns-chip-medium{background:var(--warn-bg);color:#9a6a16;}
+#nubivio-hsh .ns-chip-low{background:var(--info-bg);color:var(--p);}
+#nubivio-hsh .ns-chip-ok{background:var(--ok-bg);color:#0c7a4f;}
+#nubivio-hsh .ns-finding-list,#nubivio-hsh .ns-health-list{list-style:none;margin:0;padding:0;}
+#nubivio-hsh .ns-finding{padding:9px 0;border-bottom:1px solid #f0f1f3;font-size:13px;line-height:1.5;color:#4A4D55;}
+#nubivio-hsh .ns-finding:last-child{border-bottom:none;}
+#nubivio-hsh .ns-finding .ns-chip{margin-right:8px;}
+#nubivio-hsh .ns-ok-line{color:#0c7a4f;font-size:13px;font-weight:600;}
+#nubivio-hsh .ns-health-row{display:grid;grid-template-columns:16px 190px 1fr;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f1f3;font-size:13px;}
+#nubivio-hsh .ns-health-row:last-child{border-bottom:none;}
+#nubivio-hsh .ns-health-label{font-weight:600;color:var(--p2);}
+#nubivio-hsh .ns-health-detail{color:#6F727A;font-size:12.5px;}
+#nubivio-hsh .ns-dot{width:12px;height:12px;border-radius:50%;display:inline-block;}
+#nubivio-hsh .ns-dot-pass{background:var(--ok);}
+#nubivio-hsh .ns-dot-warn{background:var(--warn);}
+#nubivio-hsh .ns-dot-fail{background:var(--danger);}
+#nubivio-hsh .ns-evidence-table{width:100%;border-collapse:collapse;margin-top:6px;}
+#nubivio-hsh .ns-evidence-table th,#nubivio-hsh .ns-evidence-table td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--mist);font-size:13px;vertical-align:top;}
+#nubivio-hsh .ns-evidence-table th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#6F727A;}
+#nubivio-hsh .ns-evidence-table code{font-size:12px;}
+#nubivio-hsh .ns-doc-links{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;}
+#nubivio-hsh .ns-btn-ghost{background:#fff;color:var(--p);border:1px solid var(--p);}
+#nubivio-hsh .ns-btn-ghost:hover{background:var(--info-bg);}
+@media(max-width:782px){#nubivio-hsh .ns-health-row{grid-template-columns:16px 1fr;}#nubivio-hsh .ns-health-detail{grid-column:2;}}

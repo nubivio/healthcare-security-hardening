@@ -19,4 +19,13 @@
 	}
 	cb.addEventListener('change', update);
 	update();
+
+	var scanForm = root.querySelector('.ns-scan-form');
+	if (scanForm) {
+		scanForm.addEventListener('submit', function (e) {
+			if (!window.confirm('Run a compliance scan now? This contacts the WordPress.org Plugins API and may take a few seconds.')) {
+				e.preventDefault();
+			}
+		});
+	}
 })();
