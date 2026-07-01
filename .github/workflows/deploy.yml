@@ -20,11 +20,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Derive version from tag
-        id: version
-        # Strip a leading "v" so tag v2.1.1 maps to WordPress version 2.1.1
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-
       - name: WordPress Plugin Deploy
         uses: 10up/action-wordpress-plugin-deploy@stable
         env:
@@ -35,6 +30,5 @@ jobs:
           # Listing assets (icon, banner, screenshots) live here and are pushed
           # to SVN /assets, separate from the shipped plugin code.
           ASSETS_DIR: .wordpress-org
-        with:
-          # Use the version derived from the release tag as the SVN tag.
-          version: ${{ steps.version.outputs.version }}
+        # No 'version' input needed: the action uses the release tag
+        # (e.g. v2.1.2) as the SVN tag automatically.
