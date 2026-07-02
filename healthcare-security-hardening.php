@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Nubivio Healthcare Security Hardening
  * Plugin URI:        https://github.com/nubivio/healthcare-security-hardening
- * Description:       Security headers, a self-renewing security.txt (RFC 9116) and advanced form protection for healthcare related WordPress sites. Built for general practitioners, psychologists and other healthcare professionals. Recommended for NIS2, GDPR & NEN7510 compliance.
- * Version:           2.2.0
+ * Description:       Security headers, a self-renewing security.txt (RFC 9116) and an optional CRA, GDPR and NIS2 compliance scanner for healthcare WordPress sites. Built for general practitioners, psychologists and other healthcare professionals. A building block toward NIS2, GDPR and NEN 7510.
+ * Version:           2.2.1
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Nubivio
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 
 final class Nubivio_HSH {
 
-    const VERSION     = '2.2.0';
+    const VERSION     = '2.2.1';
     const OPTION      = 'nubivio_hsh_options';
     const SCAN_OPTION = 'nubivio_hsh_scan';
     const CRON_HOOK   = 'nubivio_hsh_daily';

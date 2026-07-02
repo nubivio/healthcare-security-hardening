@@ -1,22 +1,29 @@
-=== Nubivio Healthcare Security Hardening ===
+=== Nubivio Security Headers, security.txt & NIS2 Compliance for Healthcare ===
 Contributors: nubivio
-Tags: security, headers, security-txt, csp, hsts
+Tags: security, security-txt, nis2, hsts, headers
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Security headers, a self-renewing security.txt (RFC 9116) and advanced form protection for healthcare related WordPress sites.
+Security headers, a self-renewing security.txt (RFC 9116) and an optional CRA, GDPR and NIS2 compliance scanner for healthcare WordPress sites.
 
 == Description ==
 
-Security headers, a self-renewing security.txt (RFC 9116) and advanced form protection for healthcare related WordPress sites. Built for general practitioners, psychologists and other healthcare professionals. Recommended for NIS2, GDPR and NEN7510 compliance.
+Set the security headers that matter, publish a self-renewing **security.txt** (RFC 9116), and check your site against **NIS2**, the EU Cyber Resilience Act (CRA), GDPR and NEN 7510, all from one settings page. Built for general practitioners, psychologists and other healthcare professionals who need a defensible security baseline without a consultant.
 
-Everything is managed from one settings page, and the defaults are safe to ship on a live site. The plugin is built to move your score on the internet.nl test in the right direction.
+The defaults are safe to ship on a live site, and the plugin is built to move your score on the internet.nl test in the right direction. The compliance features are optional and read-only: they verify and document what you already have, and never change your hardening.
 
-It covers three areas:
+**Why healthcare sites use this**
+
+* One click to a strong header set and a valid security.txt, the two things the internet.nl test and most security reviews check first.
+* An optional Compliance tab that turns those headers and your security.txt into evidence, mapped to NIS2 Art. 21, CRA Art. 14 and GDPR clauses.
+* A compliance score with a plain-language breakdown, so you know where you stand and what to fix next.
+* Available in English and Dutch.
+
+It covers four areas:
 
 **Security headers**
 
@@ -37,12 +44,23 @@ It covers three areas:
 * A free-text message to researchers and an optional signature line
 * CRLF line endings and a valid Canonical URL, exactly as the internet.nl test expects
 
+**Compliance scanner (optional, new in 2.2.0)**
+
+* A Compliance tab with a single compliance score and a red / amber / green band
+* CRA plugin readiness: checks each active plugin against the WordPress.org directory for update currency, compatibility and abandonment
+* GDPR checks: detects third-party scripts, forms and consent tooling, and cross-references your Content-Security-Policy
+* NIS2 Art. 21 signals: encryption in transit, MFA, backups, WAF, activity logging and auto-updates
+* Site health checks: security.txt validity, live header verification, WordPress and PHP currency, TLS, debug mode, XML-RPC and REST user exposure
+* Live verification that your configured security headers are actually being sent, not just set
+* Security headers and security.txt shown as compliance evidence, mapped to the relevant NIS2, CRA and GDPR clauses
+* One-click documents generated from your own settings: a Vulnerability Disclosure Policy, a CycloneDX SBOM, an EU and NEN 7510 conformity declaration, and a printable compliance report
+
 **Gravity Forms (optional)**
 
 * Block submissions from one or more email domains, with a custom error message
 * The section only appears when Gravity Forms is active
 
-This plugin configures headers and a security.txt. It is one building block toward NIS2, GDPR and NEN7510, not a full compliance programme. It cannot change DNS or server level items such as IPv6, the CAA record, the TLS key-exchange hash or DANE. Those are handled at your host or DNS provider.
+This plugin configures headers and a security.txt and helps you document your posture. It is one building block toward NIS2, CRA, GDPR and NEN 7510, not a full compliance programme, and the generated documents are self-assessment starting points, not certifications. It cannot change DNS or server level items such as IPv6, the CAA record, the TLS key-exchange hash or DANE. Those are handled at your host or DNS provider.
 
 == Installation ==
 
@@ -63,8 +81,11 @@ Enable and enforce a Content-Security-Policy that fits your site, set Referrer-P
 = Can I publish a PGP key? =
 Yes. Paste your ASCII-armored public key in the security.txt section. The plugin hosts it at /.well-known/openpgp-key.txt and references it from security.txt as the Encryption field automatically.
 
-= Does this make me NIS2, GDPR or NEN7510 compliant? =
-It covers the public web hardening part: transport security, browser protections and a vulnerability disclosure contact. It is a useful building block, not a full compliance programme.
+= Does this make me NIS2, CRA, GDPR or NEN 7510 compliant? =
+No single plugin can. It covers the public web hardening part (transport security, browser protections and a vulnerability disclosure contact), verifies it live, and generates starting-point documents such as a Vulnerability Disclosure Policy, an SBOM and a conformity declaration. It is a useful building block and an evidence tool, not a full compliance programme or a certification.
+
+= Is the Compliance tab safe to use? =
+Yes. It is optional and read-only. Scanning only reads your site and public WordPress.org data; it never changes your settings or hardening. If you never open the tab, nothing about your site changes.
 
 = Is Gravity Forms required? =
 No. The header and security.txt features work on any site. The form section only appears when Gravity Forms is active.
@@ -95,9 +116,13 @@ When a compliance scan runs, the plugin makes a request to its own home URL to v
 == Screenshots ==
 
 1. The Nubivio Security settings page: header status card with the live security.txt state, the security headers section with per-header toggles, and the RFC 9116 security.txt fields.
-2. The Compliance tab: compliance score, per-framework findings, site health checks and the security headers and security.txt evidence panels.
+2. The Compliance tab: compliance score, CRA, GDPR and NIS2 findings, site health checks and the security headers and security.txt evidence panels.
+3. The compliance score at a glance, with the red / amber / green band and the high, medium and low finding counts.
 
 == Changelog ==
+
+= 2.2.1 =
+* Listing and documentation refresh: clearer description covering the NIS2, CRA and security.txt features, and two new screenshots of the Compliance tab. No code changes.
 
 = 2.2.0 =
 * New Compliance tab: CRA, GDPR and NIS2 scanning plus site health checks
@@ -130,6 +155,9 @@ When a compliance scan runs, the plugin makes a request to its own home URL to v
 * Gravity Forms email-domain blocking, shown only when Gravity Forms is active
 
 == Upgrade Notice ==
+
+= 2.2.1 =
+Documentation and listing update only. No functional changes.
 
 = 2.2.0 =
 Adds an optional Compliance tab. Existing hardening is unchanged.
