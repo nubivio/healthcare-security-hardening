@@ -4,7 +4,7 @@ Tags: security, security-txt, nis2, hsts, headers
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.2.1
+Stable tag: 2.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -121,6 +121,9 @@ When a compliance scan runs, the plugin makes a request to its own home URL to v
 
 == Changelog ==
 
+= 2.2.2 =
+* Fix: the optional signature line in security.txt now uses a plain ASCII separator, so servers that do not declare UTF-8 no longer render mojibake (e.g. "Â·") for the middle dot.
+
 = 2.2.1 =
 * Listing and documentation refresh: clearer description covering the NIS2, CRA and security.txt features, and two new screenshots of the Compliance tab. No code changes.
 
@@ -155,6 +158,9 @@ When a compliance scan runs, the plugin makes a request to its own home URL to v
 * Gravity Forms email-domain blocking, shown only when Gravity Forms is active
 
 == Upgrade Notice ==
+
+= 2.2.2 =
+Small fix to the optional signature line in security.txt. No functional changes elsewhere.
 
 = 2.2.1 =
 Documentation and listing update only. No functional changes.
