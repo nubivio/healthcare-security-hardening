@@ -20,12 +20,13 @@ class Nubivio_HSH_Score {
      * @param array $gdpr   GDPR run result.
      * @param array $nis2   NIS2 run result.
      * @param array $health Health run result.
+     * @param array $extra  Further module results with a counts array, e.g. integrity and access.
      * @return array{score:int,band:string,header_bonus:int,sectxt_bonus:int,breakdown:array}
      */
-    public static function compute($core, $cra, $gdpr, $nis2, $health) {
+    public static function compute($core, $cra, $gdpr, $nis2, $health, $extra = array()) {
         $high = 0;
         $medium = 0;
-        foreach (array($cra, $gdpr, $nis2) as $set) {
+        foreach (array_merge(array($cra, $gdpr, $nis2), (array) $extra) as $set) {
             if (isset($set['counts']['high'])) {
                 $high += (int) $set['counts']['high'];
             }

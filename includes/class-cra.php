@@ -13,6 +13,50 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+/**
+ * Registered domains of vendors that sell plugins outside the WordPress.org
+ * directory. A plugin whose PluginURI/AuthorURI points at one of these is
+ * commercial by design, not a removed or abandoned directory plugin.
+ * Extend at runtime with the nubivio_hsh_commercial_vendors filter.
+ */
+if (!defined('NUBIVIO_HSH_COMMERCIAL_VENDORS_DEFAULT')) {
+    define('NUBIVIO_HSH_COMMERCIAL_VENDORS_DEFAULT', implode(',', array(
+        'rocketgenius.com',
+        'gravityforms.com',
+        'wpforms.com',
+        'advancedcustomfields.com',
+        'elegantthemes.com',
+        'divi.com',
+        'gravitywp.com',
+        'gravityview.co',
+        'yoast.com',
+        'iconicwp.com',
+        'wpmudev.com',
+        'elementor.com',
+        'astra.build',
+        'wpastra.com',
+        'brainstormforce.com',
+        'automattic.com',
+        'woocommerce.com',
+        'jetpack.com',
+        'convertkit.com',
+        'mailerlite.com',
+        'mailchimp.com',
+        'sucuri.net',
+        'wordfence.com',
+        'kadencewp.com',
+        'generatepress.com',
+        'oxygenapp.com',
+        'bricksbuilder.io',
+        'wp-rocket.me',
+        'imagify.io',
+        'searchwp.com',
+        'gravitywiz.com',
+        'givewp.com',
+        'soflyy.com',
+    )));
+}
+
 class Nubivio_HSH_Cra {
 
     /** @var Nubivio_HSH */
@@ -54,26 +98,22 @@ class Nubivio_HSH_Cra {
 
             $info = $this->fetch_plugin_info($slug);
 
-            if ($info === 'closed') {
-                $findings[] = $this->finding(
-                    $name,
-                    $slug,
-                    'high',
-                    __('Plugin not found in the WordPress.org directory; may be removed or closed.', 'nubivio-healthcare-security-hardening')
-                );
-                $counts['high']++;
-                continue;
-            }
+            if (!is_array($info)) {
+                $class = $this->classify_missing($file, $data, $slug, $info === 'closed');
 
-            if ($info === 'unknown' || !is_array($info)) {
-                // Premium or otherwise not in the public directory: informational.
-                $findings[] = $this->finding(
-                    $name,
-                    $slug,
-                    'low',
-                    __('Not in the public WordPress.org directory; cannot verify update or compatibility status.', 'nubivio-healthcare-security-hardening')
-                );
-                $counts['low']++;
+                if ($class === 'commercial') {
+                    $severity = 'low';
+                    $message  = __('Commercial plugin. Not in the public WordPress.org directory. Verify updates via the vendor\'s own channel.', 'nubivio-healthcare-security-hardening');
+                } elseif ($class === 'possibly_removed') {
+                    $severity = 'high';
+                    $message  = __('Was in the WordPress.org directory but appears to be removed or closed.', 'nubivio-healthcare-security-hardening');
+                } else {
+                    $severity = 'medium';
+                    $message  = __('Not in the public WordPress.org directory. Verify this is a private or commercial plugin and that you have a trusted update path.', 'nubivio-healthcare-security-hardening');
+                }
+
+                $findings[] = $this->finding($name, $slug, $severity, $message);
+                $counts[$severity]++;
                 continue;
             }
 
@@ -210,6 +250,127 @@ class Nubivio_HSH_Cra {
 
         set_transient($key, $data, 12 * HOUR_IN_SECONDS);
         return $data;
+    }
+
+    /**
+     * Decide why a plugin is absent from the WordPress.org directory.
+     *
+     * First signal to hit wins, strongest trust first.
+     *
+     * @param string $file    Plugin file, e.g. "gravityforms/gravityforms.php".
+     * @param array  $data    Plugin header data from get_plugins().
+     * @param string $slug    Directory slug derived from $file.
+     * @param bool   $is_404  Whether the Plugins API answered "not found".
+     * @return string 'commercial'|'possibly_removed'|'unknown'
+     */
+    private function classify_missing($file, $data, $slug, $is_404) {
+        // 1. User allowlist: the site owner has vouched for this slug.
+        if (in_array($slug, $this->private_plugin_slugs(), true)) {
+            return 'commercial';
+        }
+
+        // 2. Vendor domain fingerprint from the plugin headers.
+        $vendors = $this->commercial_vendors();
+        foreach (array('PluginURI', 'AuthorURI') as $field) {
+            if (empty($data[$field])) {
+                continue;
+            }
+            $domain = $this->registered_domain($data[$field]);
+            if ($domain !== '' && in_array($domain, $vendors, true)) {
+                return 'commercial';
+            }
+        }
+
+        // 3. Update package served from somewhere other than WordPress.org.
+        $updates = get_site_transient('update_plugins');
+        if (is_object($updates)) {
+            foreach (array('response', 'no_update') as $bucket) {
+                $entries = isset($updates->$bucket) ? $updates->$bucket : null;
+                if (!is_array($entries) || empty($entries[$file]->package)) {
+                    continue;
+                }
+                $host = strtolower((string) wp_parse_url($entries[$file]->package, PHP_URL_HOST));
+                if ($host !== '' && $host !== 'downloads.wordpress.org') {
+                    return 'commercial';
+                }
+            }
+        }
+
+        // 4. The plugin itself claims WordPress.org membership, but the API says no.
+        if ($is_404 && !empty($data['UpdateURI'])) {
+            $host = strtolower((string) wp_parse_url($data['UpdateURI'], PHP_URL_HOST));
+            if ($host === 'w.org' || $host === 'wordpress.org' || substr($host, -14) === '.wordpress.org') {
+                return 'possibly_removed';
+            }
+        }
+
+        return 'unknown';
+    }
+
+    /**
+     * Slugs the site owner marked as private or commercial.
+     *
+     * Stored as an array by the settings form; a comma or newline separated
+     * string is accepted too so hand-edited options still work.
+     *
+     * @return array<int,string>
+     */
+    private function private_plugin_slugs() {
+        $o    = $this->core->get_options();
+        $list = isset($o['private_plugin_slugs']) ? $o['private_plugin_slugs'] : array();
+        if (!is_array($list)) {
+            $list = preg_split('/[\s,]+/', (string) $list);
+        }
+        $out = array();
+        foreach ($list as $item) {
+            $item = sanitize_key($item);
+            if ($item !== '') {
+                $out[] = $item;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * @return array<int,string> Lower-case registered domains.
+     */
+    private function commercial_vendors() {
+        $vendors = preg_split('/[\s,]+/', NUBIVIO_HSH_COMMERCIAL_VENDORS_DEFAULT);
+        $vendors = apply_filters('nubivio_hsh_commercial_vendors', $vendors);
+        $out = array();
+        foreach ((array) $vendors as $vendor) {
+            $vendor = strtolower(trim((string) $vendor));
+            if ($vendor !== '') {
+                $out[] = $vendor;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Registered domain of a URL: the last two labels, or three for the
+     * handful of ccSLDs that would otherwise collapse to "co.uk".
+     *
+     * @param string $url
+     * @return string Lower-case domain, or '' when the URL has no host.
+     */
+    private function registered_domain($url) {
+        $host = strtolower((string) wp_parse_url((string) $url, PHP_URL_HOST));
+        if ($host === '') {
+            return '';
+        }
+        $cc_slds = array('co.uk', 'org.uk', 'me.uk', 'com.au', 'net.au', 'co.nz', 'co.za', 'co.jp', 'com.br');
+        foreach ($cc_slds as $sld) {
+            if (substr($host, -(strlen($sld) + 1)) === '.' . $sld) {
+                if (preg_match('/([a-z0-9-]+\.' . preg_quote($sld, '/') . ')$/i', $host, $m)) {
+                    return strtolower($m[1]);
+                }
+            }
+        }
+        if (preg_match('/([a-z0-9-]+\.[a-z]{2,})$/i', $host, $m)) {
+            return strtolower($m[1]);
+        }
+        return $host;
     }
 
     private function slug_from_file($file) {

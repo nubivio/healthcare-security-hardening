@@ -85,12 +85,31 @@ class Nubivio_HSH_Scanner {
             $results['nis2'] = $nis2;
         }
 
-        // Health always runs.
-        $health = $this->health()->run();
+        $integrity = array('findings' => array(), 'counts' => array('high' => 0, 'medium' => 0, 'low' => 0), 'summary' => array());
+        if (class_exists('Nubivio_HSH_Integrity')) {
+            $integrity = (new Nubivio_HSH_Integrity($this->core))->run();
+            $results['integrity'] = $integrity;
+        }
+
+        $access = array('findings' => array(), 'counts' => array('high' => 0, 'medium' => 0, 'low' => 0), 'report' => array());
+        if (class_exists('Nubivio_HSH_Access')) {
+            $access = (new Nubivio_HSH_Access($this->core))->run();
+            $results['access'] = $access;
+        }
+
+        // Health always runs, and picks up the two new rows from the modules above.
+        $extra_rows = array();
+        if (class_exists('Nubivio_HSH_Integrity') && !empty($integrity['summary'])) {
+            $extra_rows[] = Nubivio_HSH_Integrity::health_row($integrity['summary']);
+        }
+        if (class_exists('Nubivio_HSH_Access') && !empty($access['report'])) {
+            $extra_rows[] = Nubivio_HSH_Access::health_row($access['report']);
+        }
+        $health = $this->health()->run($extra_rows);
         $results['health'] = $health;
 
         $counts = array('high' => 0, 'medium' => 0, 'low' => 0);
-        foreach (array($cra, $gdpr, $nis2) as $set) {
+        foreach (array($cra, $gdpr, $nis2, $integrity, $access) as $set) {
             foreach (array('high', 'medium', 'low') as $sev) {
                 if (isset($set['counts'][$sev])) {
                     $counts[$sev] += (int) $set['counts'][$sev];
@@ -99,7 +118,7 @@ class Nubivio_HSH_Scanner {
         }
 
         $score = class_exists('Nubivio_HSH_Score')
-            ? Nubivio_HSH_Score::compute($this->core, $cra, $gdpr, $nis2, $health)
+            ? Nubivio_HSH_Score::compute($this->core, $cra, $gdpr, $nis2, $health, array($integrity, $access))
             : array('score' => 0, 'band' => 'red', 'header_bonus' => 0, 'sectxt_bonus' => 0, 'breakdown' => array());
 
         return array(

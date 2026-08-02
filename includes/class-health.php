@@ -20,9 +20,10 @@ class Nubivio_HSH_Health {
     }
 
     /**
+     * @param array<int,array> $extra_rows Rows contributed by other modules, appended as-is.
      * @return array{checks:array<int,array>,fails:int}
      */
-    public function run() {
+    public function run($extra_rows = array()) {
         $checks = array();
 
         // security.txt resolvable and non-expired.
@@ -138,6 +139,12 @@ class Nubivio_HSH_Health {
 
         // REST user enumeration.
         $checks[] = $this->check_rest_users();
+
+        foreach ((array) $extra_rows as $row) {
+            if (isset($row['label'], $row['status'], $row['detail'])) {
+                $checks[] = $row;
+            }
+        }
 
         $fails = 0;
         foreach ($checks as $c) {

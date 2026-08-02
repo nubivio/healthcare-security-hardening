@@ -136,6 +136,179 @@ $header_clauses = array(
         </div>
     <?php endforeach; ?>
 
+    <?php
+    // WordPress core integrity (v2.3.0).
+    if (!empty($scan['frameworks']['integrity'])):
+        $integrity = $scan['frameworks']['integrity'];
+        $isum      = isset($integrity['summary']) ? $integrity['summary'] : array();
+        $i_mod     = isset($isum['modified']) ? (array) $isum['modified'] : array();
+        $i_missing = isset($isum['missing']) ? (array) $isum['missing'] : array();
+        $i_unread  = isset($isum['unreadable']) ? (array) $isum['unreadable'] : array();
+        $i_bad     = array_merge($i_missing, $i_mod);
+        ?>
+        <div class="ns-card">
+            <h2><?php esc_html_e('WordPress core integrity', 'nubivio-healthcare-security-hardening'); ?></h2>
+            <p class="ns-card-intro"><?php echo esc_html(sprintf(
+                /* translators: 1: WordPress version, 2: site locale. */
+                __('Checked WordPress %1$s, locale %2$s.', 'nubivio-healthcare-security-hardening'),
+                isset($isum['version']) ? $isum['version'] : '',
+                isset($isum['locale']) ? $isum['locale'] : ''
+            )); ?></p>
+
+            <?php if (empty($isum['available'])): ?>
+                <span class="ns-chip ns-chip-medium"><?php esc_html_e('Checksums unavailable', 'nubivio-healthcare-security-hardening'); ?></span>
+            <?php elseif (empty($i_bad)): ?>
+                <span class="ns-chip ns-chip-ok"><?php echo esc_html(sprintf(
+                    /* translators: %d: number of core files verified. */
+                    _n('All %d core file matches', 'All %d core files match', (int) $isum['checked'], 'nubivio-healthcare-security-hardening'),
+                    (int) $isum['checked']
+                )); ?></span>
+            <?php else: ?>
+                <span class="ns-chip ns-chip-high"><?php echo esc_html(sprintf(
+                    /* translators: 1: number of modified files, 2: number of missing files. */
+                    __('%1$d modified, %2$d missing', 'nubivio-healthcare-security-hardening'),
+                    count($i_mod),
+                    count($i_missing)
+                )); ?></span>
+                <details class="ns-details">
+                    <summary><?php esc_html_e('Show affected files', 'nubivio-healthcare-security-hardening'); ?></summary>
+                    <ul class="ns-file-list">
+                        <?php foreach (array_slice($i_bad, 0, 20) as $path): ?>
+                            <li><code><?php echo esc_html($path); ?></code></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </details>
+            <?php endif; ?>
+
+            <?php if (!empty($isum['truncated'])): ?>
+                <p class="ns-desc"><?php esc_html_e('The check stopped early because the file cap was reached.', 'nubivio-healthcare-security-hardening'); ?></p>
+            <?php endif; ?>
+            <?php if (!empty($i_unread)): ?>
+                <p class="ns-desc"><?php echo esc_html(sprintf(
+                    /* translators: %d: number of unreadable core files. */
+                    _n('%d core file could not be read and was skipped.', '%d core files could not be read and were skipped.', count($i_unread), 'nubivio-healthcare-security-hardening'),
+                    count($i_unread)
+                )); ?></p>
+            <?php endif; ?>
+
+            <p class="ns-desc"><?php esc_html_e('Uses the official WordPress.org checksums API (MD5). This detects unintended or malicious file changes; it is not a cryptographic tamper-proof check.', 'nubivio-healthcare-security-hardening'); ?></p>
+            <p class="ns-desc"><?php esc_html_e('Recently updated? Checksums may lag by a few minutes after a core update.', 'nubivio-healthcare-security-hardening'); ?></p>
+        </div>
+    <?php endif; ?>
+
+    <?php
+    // Access and integrity (v2.3.0).
+    if (!empty($scan['frameworks']['access'])):
+        $access    = $scan['frameworks']['access'];
+        $a_report  = isset($access['report']) ? $access['report'] : array();
+        $a_find    = isset($access['findings']) ? $access['findings'] : array();
+        ?>
+        <div class="ns-card">
+            <h2><?php esc_html_e('Access &amp; integrity', 'nubivio-healthcare-security-hardening'); ?></h2>
+
+            <?php if (!empty($a_report['admins'])): ?>
+                <h3><?php esc_html_e('Administrators', 'nubivio-healthcare-security-hardening'); ?></h3>
+                <table class="ns-evidence-table">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e('Login', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('Email', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('Registered', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('Last login', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('App passwords', 'nubivio-healthcare-security-hardening'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($a_report['admins'] as $admin): ?>
+                            <tr>
+                                <td>
+                                    <?php echo esc_html($admin['login']); ?>
+                                    <?php if ($admin['state'] === 'new'): ?>
+                                        <span class="ns-chip ns-chip-high"><?php esc_html_e('new', 'nubivio-healthcare-security-hardening'); ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo esc_html($admin['email']); ?></td>
+                                <td><?php echo esc_html($admin['registered']); ?></td>
+                                <td><?php echo esc_html($admin['last_login']); ?></td>
+                                <td><?php echo (int) $admin['app_pw_count']; ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+
+            <?php if (!empty($a_report['app_passwords'])): ?>
+                <h3><?php esc_html_e('Application passwords', 'nubivio-healthcare-security-hardening'); ?></h3>
+                <table class="ns-evidence-table">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e('Administrator', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('Name', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('Created', 'nubivio-healthcare-security-hardening'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($a_report['app_passwords'] as $pw): ?>
+                            <tr>
+                                <td><?php echo esc_html($pw['login']); ?></td>
+                                <td>
+                                    <?php echo esc_html($pw['name']); ?>
+                                    <?php if (!empty($pw['new'])): ?>
+                                        <span class="ns-chip ns-chip-medium"><?php esc_html_e('new', 'nubivio-healthcare-security-hardening'); ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo esc_html($pw['created']); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+
+            <?php if (!empty($a_report['mu_plugins'])): ?>
+                <h3><?php esc_html_e('Must-use plugins', 'nubivio-healthcare-security-hardening'); ?></h3>
+                <ul class="ns-file-list">
+                    <?php foreach ($a_report['mu_plugins'] as $mu): ?>
+                        <li>
+                            <code><?php echo esc_html($mu['file']); ?></code>
+                            <?php if (empty($mu['known'])): ?>
+                                <span class="ns-chip ns-chip-medium"><?php esc_html_e('unexpected', 'nubivio-healthcare-security-hardening'); ?></span>
+                            <?php else: ?>
+                                <span class="ns-chip ns-chip-ok"><?php esc_html_e('known host plugin', 'nubivio-healthcare-security-hardening'); ?></span>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+
+            <h3><?php esc_html_e('Findings', 'nubivio-healthcare-security-hardening'); ?></h3>
+            <?php if (empty($a_find)): ?>
+                <p class="ns-ok-line"><?php esc_html_e('No issues detected.', 'nubivio-healthcare-security-hardening'); ?></p>
+            <?php else: ?>
+                <ul class="ns-finding-list">
+                    <?php foreach ($a_find as $f):
+                        $sev = isset($f['severity']) ? $f['severity'] : 'low';
+                        ?>
+                        <li class="ns-finding ns-finding-<?php echo esc_attr($sev); ?>">
+                            <span class="ns-chip ns-chip-<?php echo esc_attr($sev === 'warn' ? 'medium' : $sev); ?>"><?php echo esc_html(strtoupper($sev)); ?></span>
+                            <?php echo esc_html(isset($f['message']) ? $f['message'] : ''); ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+
+            <?php if (!empty($a_report['needs_approval'])): ?>
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="ns-approve-form">
+                    <input type="hidden" name="action" value="<?php echo esc_attr(Nubivio_HSH::APPROVE_ACTION); ?>">
+                    <?php wp_nonce_field(Nubivio_HSH::APPROVE_ACTION); ?>
+                    <button type="submit" class="ns-btn ns-btn-ghost"><?php esc_html_e('Approve current admins', 'nubivio-healthcare-security-hardening'); ?></button>
+                    <span class="ns-by"><?php esc_html_e('Records the accounts above as the approved baseline for future scans.', 'nubivio-healthcare-security-hardening'); ?></span>
+                </form>
+            <?php endif; ?>
+
+            <p class="ns-desc"><?php esc_html_e('These checks are read-only snapshots taken during the scan. Nothing here changes users, roles or files.', 'nubivio-healthcare-security-hardening'); ?></p>
+        </div>
+    <?php endif; ?>
+
     <?php // Health checklist.
     if (!empty($scan['frameworks']['health']['checks'])): ?>
         <div class="ns-card">

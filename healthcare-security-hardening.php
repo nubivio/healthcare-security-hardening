@@ -3,7 +3,7 @@
  * Plugin Name:       Nubivio Healthcare Security Hardening
  * Plugin URI:        https://github.com/nubivio/healthcare-security-hardening
  * Description:       Security headers, a self-renewing security.txt (RFC 9116) and an optional CRA, GDPR and NIS2 compliance scanner for healthcare WordPress sites. Built for general practitioners, psychologists and other healthcare professionals. A building block toward NIS2, GDPR and NEN 7510.
- * Version:           2.2.2
+ * Version:           2.3.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Nubivio
@@ -23,12 +23,13 @@ if (!defined('ABSPATH')) {
 
 final class Nubivio_HSH {
 
-    const VERSION     = '2.2.2';
+    const VERSION     = '2.3.0';
     const OPTION      = 'nubivio_hsh_options';
     const SCAN_OPTION = 'nubivio_hsh_scan';
     const CRON_HOOK   = 'nubivio_hsh_daily';
     const SLUG        = 'nubivio-healthcare-security-hardening';
     const SCAN_ACTION = 'nubivio_hsh_run_scan';
+    const APPROVE_ACTION = 'nubivio_hsh_approve_admins';
 
     /** @var Nubivio_HSH|null */
     private static $instance = null;
@@ -61,6 +62,7 @@ final class Nubivio_HSH {
         // Compliance scan + document generation (admin only).
         add_action('admin_post_' . self::SCAN_ACTION, array($this, 'handle_run_scan'));
         add_action('admin_post_nubivio_hsh_doc', array($this, 'handle_download_doc'));
+        add_action('admin_post_' . self::APPROVE_ACTION, array($this, 'handle_approve_admins'));
 
         add_action(self::CRON_HOOK, array($this, 'write_security_txt_file'));
         add_action(self::CRON_HOOK, array($this, 'run_scheduled_scan'));
@@ -76,6 +78,8 @@ final class Nubivio_HSH {
             'class-cra.php',
             'class-gdpr.php',
             'class-nis2.php',
+            'class-integrity.php',
+            'class-access.php',
             'class-health.php',
             'class-score.php',
             'class-scanner.php',
@@ -195,6 +199,10 @@ final class Nubivio_HSH {
             'scan_on_cron'        => 0,
             'vdp_synced'          => 0,
             'patchstack_key'      => '', // reserved for a future opt-in phase; unused today
+
+            // Access and CRA precision (v2.3.0).
+            'private_plugin_slugs' => array(),
+            'baseline'             => array(),
         );
     }
 
@@ -651,6 +659,13 @@ final class Nubivio_HSH {
         $clean['sectxt_pgp']        = $this->sanitize_multiline($in['sectxt_pgp'] ?? '', false);
         $clean['gf_block_domains']  = $this->sanitize_multiline($in['gf_block_domains'] ?? $d['gf_block_domains'], false);
 
+        $clean['private_plugin_slugs'] = $this->sanitize_slug_list($in['private_plugin_slugs'] ?? '');
+
+        // The approved administrator baseline is only ever written by the
+        // approve action or the first scan; never reset it from this form.
+        $current = $this->get_options();
+        $clean['baseline'] = isset($current['baseline']) && is_array($current['baseline']) ? $current['baseline'] : array();
+
         update_option(self::OPTION, wp_parse_args($clean, $d));
 
         delete_transient('nubivio_hsh_sectxt_checked');
@@ -658,6 +673,28 @@ final class Nubivio_HSH {
 
         wp_safe_redirect(add_query_arg(array('page' => self::SLUG, 'updated' => '1'), admin_url('options-general.php')));
         exit;
+    }
+
+    /**
+     * Plugin slugs from a textarea: one per line, commas tolerated.
+     *
+     * @param string|array $value
+     * @return array<int,string>
+     */
+    private function sanitize_slug_list($value) {
+        if (is_array($value)) {
+            $parts = $value;
+        } else {
+            $parts = preg_split('/[\s,]+/', (string) $value);
+        }
+        $out = array();
+        foreach ((array) $parts as $part) {
+            $part = sanitize_key($part);
+            if ($part !== '' && !in_array($part, $out, true)) {
+                $out[] = $part;
+            }
+        }
+        return $out;
     }
 
     private function sanitize_multiline($value, $single_line) {
@@ -739,6 +776,35 @@ final class Nubivio_HSH {
         update_option(self::SCAN_OPTION, $scanner->run());
         delete_transient('nubivio_hsh_scan_running');
         set_transient('nubivio_hsh_scan_cooldown', 1, HOUR_IN_SECONDS);
+    }
+
+    /**
+     * Approve the current administrator accounts as the new baseline.
+     * Capability + nonce gated, then POST-redirect-GET.
+     */
+    public function handle_approve_admins() {
+        if (!current_user_can('manage_options')) {
+            wp_die(esc_html__('You are not allowed to approve administrator accounts.', 'nubivio-healthcare-security-hardening'));
+        }
+        check_admin_referer(self::APPROVE_ACTION);
+
+        $redirect = add_query_arg(
+            array('page' => self::SLUG, 'tab' => 'compliance'),
+            admin_url('options-general.php')
+        );
+
+        if (!class_exists('Nubivio_HSH_Access')) {
+            wp_safe_redirect(add_query_arg('scan', 'unavailable', $redirect));
+            exit;
+        }
+
+        $access = new Nubivio_HSH_Access($this);
+        $o = $this->get_options();
+        $o['baseline'] = $access->build_baseline();
+        update_option(self::OPTION, $o);
+
+        wp_safe_redirect(add_query_arg('approved', '1', $redirect));
+        exit;
     }
 
     /**
@@ -843,6 +909,10 @@ final class Nubivio_HSH {
                     <div class="notice notice-warning is-dismissible"><p><?php esc_html_e('A scan is already running. Please wait for it to finish.', 'nubivio-healthcare-security-hardening'); ?></p></div>
                 <?php elseif ($scan_msg === 'unavailable'): ?>
                     <div class="notice notice-error is-dismissible"><p><?php esc_html_e('The scanner module is unavailable.', 'nubivio-healthcare-security-hardening'); ?></p></div>
+                <?php endif; ?>
+                <?php // phpcs:ignore WordPress.Security.NonceVerification
+                if (isset($_GET['approved'])): ?>
+                    <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Current administrator accounts approved as the new baseline.', 'nubivio-healthcare-security-hardening'); ?></p></div>
                 <?php endif; ?>
                 <?php
                 $dashboard = plugin_dir_path(__FILE__) . 'admin/dashboard.php';
@@ -1081,6 +1151,17 @@ final class Nubivio_HSH {
                     </div>
                 </div>
                 <?php endif; ?>
+
+                <div class="ns-card">
+                    <h2><?php esc_html_e('Compliance scanner', 'nubivio-healthcare-security-hardening'); ?></h2>
+                    <div class="ns-field ns-field-flat">
+                        <label class="ns-strong" for="nubivio-hsh-private-slugs"><?php esc_html_e('Private / commercial plugin slugs (one per line)', 'nubivio-healthcare-security-hardening'); ?></label>
+                        <p class="ns-desc"><?php echo wp_kses_post(__('Slugs listed here are treated as commercial or private and skipped from the "not in directory" warning. Example: <code>gravityforms</code>', 'nubivio-healthcare-security-hardening')); ?></p>
+                        <textarea id="nubivio-hsh-private-slugs" name="private_plugin_slugs" rows="4" class="ns-input ns-area"><?php
+                            echo esc_textarea(implode("\n", (array) $o['private_plugin_slugs']));
+                        ?></textarea>
+                    </div>
+                </div>
 
                 <div class="ns-actions">
                     <button type="submit" class="ns-btn"><?php esc_html_e('Save settings', 'nubivio-healthcare-security-hardening'); ?></button>

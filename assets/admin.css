@@ -101,3 +101,13 @@
 #nubivio-hsh .ns-btn-ghost{background:#fff;color:var(--p);border:1px solid var(--p);}
 #nubivio-hsh .ns-btn-ghost:hover{background:var(--info-bg);}
 @media(max-width:782px){#nubivio-hsh .ns-health-row{grid-template-columns:16px 1fr;}#nubivio-hsh .ns-health-detail{grid-column:2;}}
+
+/* v2.3.0: core integrity + access & integrity cards */
+#nubivio-hsh .ns-card h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6F727A;margin:18px 0 6px;}
+#nubivio-hsh .ns-details{margin-top:10px;}
+#nubivio-hsh .ns-details summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--p);}
+#nubivio-hsh .ns-file-list{list-style:none;margin:8px 0 0;padding:0;}
+#nubivio-hsh .ns-file-list li{padding:5px 0;border-bottom:1px solid #f0f1f3;font-size:12.5px;}
+#nubivio-hsh .ns-file-list li:last-child{border-bottom:none;}
+#nubivio-hsh .ns-file-list .ns-chip{margin-left:8px;}
+#nubivio-hsh .ns-approve-form{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;}

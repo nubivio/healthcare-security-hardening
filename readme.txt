@@ -4,7 +4,7 @@ Tags: security, security-txt, nis2, hsts, headers
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.2.2
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,8 @@ It covers four areas:
 * GDPR checks: detects third-party scripts, forms and consent tooling, and cross-references your Content-Security-Policy
 * NIS2 Art. 21 signals: encryption in transit, MFA, backups, WAF, activity logging and auto-updates
 * Site health checks: security.txt validity, live header verification, WordPress and PHP currency, TLS, debug mode, XML-RPC and REST user exposure
+* WordPress core integrity: verifies your core files against the official WordPress.org checksums and reports modified or missing files (new in 2.3.0)
+* Access and integrity: an approved administrator baseline, recently created admins, roles and users with unexpected administrator capabilities, an application password audit, a must-use plugin audit and a siteurl sanity check (new in 2.3.0)
 * Live verification that your configured security headers are actually being sent, not just set
 * Security headers and security.txt shown as compliance evidence, mapped to the relevant NIS2, CRA and GDPR clauses
 * One-click documents generated from your own settings: a Vulnerability Disclosure Policy, a CycloneDX SBOM, an EU and NEN 7510 conformity declaration, and a printable compliance report
@@ -104,6 +106,16 @@ When a compliance scan runs, the plugin looks up each active plugin in the WordP
 * Caching: results are cached in a transient for 12 hours.
 * This is a first-party WordPress.org endpoint. Terms: https://wordpress.org/about/privacy/
 
+**WordPress.org Checksums API**
+
+When a compliance scan runs, the plugin retrieves the published MD5 checksums for your WordPress version so it can verify that your core files have not been altered.
+
+* What is sent: your WordPress version and site locale (for example, "6.8" and "nl_NL"). No personal data, no site data, no file contents. Files are hashed locally and only the hashes are compared.
+* When: only during a manual or scheduled compliance scan.
+* Endpoint: https://api.wordpress.org/core/checksums/1.0/
+* Caching: the checksum list is cached in a transient for 12 hours (1 hour if the request fails).
+* This is a first-party WordPress.org endpoint. Terms: https://wordpress.org/about/privacy/
+
 **Loopback self-request (header and REST probe)**
 
 When a compliance scan runs, the plugin makes a request to its own home URL to verify that the configured security headers are actually being sent and to check whether the REST users endpoint exposes user data.
@@ -120,6 +132,19 @@ When a compliance scan runs, the plugin makes a request to its own home URL to v
 3. The compliance score at a glance, with the red / amber / green band and the high, medium and low finding counts.
 
 == Changelog ==
+
+= 2.3.0 =
+* CRA precision: plugins that are not in the WordPress.org directory are now classified as commercial, possibly removed or unknown, so premium plugins such as Gravity Forms or ACF Pro no longer show up as high severity findings
+* New setting to list your own private or commercial plugin slugs and skip them from the "not in directory" warning
+* New WordPress core integrity check using the official WordPress.org checksums API, reporting modified and missing core files
+* New Access and integrity card: administrator baseline with an approve action, so any later change to the administrator list is flagged
+* Detection of administrator accounts created in the last 30 days
+* Detection of non-administrator roles and users that hold administrator capabilities
+* Application password audit across administrator accounts, flagging passwords created since the approved baseline
+* Must-use plugin audit with an allowlist for the common managed hosts
+* siteurl sanity check against the current request host
+* Scan for core files modified well after the last core update
+* All new checks are read-only and only run during a manual or scheduled compliance scan
 
 = 2.2.2 =
 * Fix: the optional signature line in security.txt now uses a plain ASCII separator, so servers that do not declare UTF-8 no longer render mojibake (e.g. "Â·") for the middle dot.
@@ -158,6 +183,9 @@ When a compliance scan runs, the plugin makes a request to its own home URL to v
 * Gravity Forms email-domain blocking, shown only when Gravity Forms is active
 
 == Upgrade Notice ==
+
+= 2.3.0 =
+Fewer false positives for commercial plugins, a WordPress core integrity check, and a new Access and integrity card covering administrators, application passwords and must-use plugins. Existing hardening is unchanged.
 
 = 2.2.2 =
 Small fix to the optional signature line in security.txt. No functional changes elsewhere.
