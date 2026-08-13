@@ -2,9 +2,9 @@
 Contributors: nubivio
 Tags: security, security-txt, nis2, hsts, headers
 Requires at least: 5.8
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.3.0
+Stable tag: 2.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -133,6 +133,9 @@ When a compliance scan runs, the plugin makes a request to its own home URL to v
 
 == Changelog ==
 
+= 2.3.1 =
+* Compatibility: tested on WordPress 7.1. No code changes; all scanners verified against the 7.1 API surface.
+
 = 2.3.0 =
 * CRA precision: plugins that are not in the WordPress.org directory are now classified as commercial, possibly removed or unknown, so premium plugins such as Gravity Forms or ACF Pro no longer show up as high severity findings
 * New setting to list your own private or commercial plugin slugs and skip them from the "not in directory" warning
@@ -183,6 +186,9 @@ When a compliance scan runs, the plugin makes a request to its own home URL to v
 * Gravity Forms email-domain blocking, shown only when Gravity Forms is active
 
 == Upgrade Notice ==
+
+= 2.3.1 =
+Compatibility bump for WordPress 7.1. No functional changes.
 
 = 2.3.0 =
 Fewer false positives for commercial plugins, a WordPress core integrity check, and a new Access and integrity card covering administrators, application passwords and must-use plugins. Existing hardening is unchanged.
