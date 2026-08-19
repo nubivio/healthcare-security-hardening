@@ -3,7 +3,7 @@
  * Plugin Name:       Nubivio Healthcare Security Hardening
  * Plugin URI:        https://github.com/nubivio/healthcare-security-hardening
  * Description:       Security headers, a self-renewing security.txt (RFC 9116) and an optional CRA, GDPR and NIS2 compliance scanner for healthcare WordPress sites. Built for general practitioners, psychologists and other healthcare professionals. A building block toward NIS2, GDPR and NEN 7510.
- * Version:           2.3.1
+ * Version:           2.4.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Nubivio
@@ -23,13 +23,17 @@ if (!defined('ABSPATH')) {
 
 final class Nubivio_HSH {
 
-    const VERSION     = '2.3.1';
+    const VERSION     = '2.4.0';
     const OPTION      = 'nubivio_hsh_options';
     const SCAN_OPTION = 'nubivio_hsh_scan';
     const CRON_HOOK   = 'nubivio_hsh_daily';
     const SLUG        = 'nubivio-healthcare-security-hardening';
     const SCAN_ACTION = 'nubivio_hsh_run_scan';
     const APPROVE_ACTION = 'nubivio_hsh_approve_admins';
+    const CSP_INVENTORY_ACTION = 'nubivio_hsh_refresh_csp_inventory';
+    const CSP_TOGGLE_ACTION = 'nubivio_hsh_toggle_csp';
+    const CSP_ALLOWLIST_ACTION = 'nubivio_hsh_csp_allowlist';
+    const DNS_REFRESH_ACTION = 'nubivio_hsh_refresh_dns';
 
     /** @var Nubivio_HSH|null */
     private static $instance = null;
@@ -49,6 +53,8 @@ final class Nubivio_HSH {
 
         add_action('init', array($this, 'load_textdomain'));
         add_action('send_headers', array($this, 'send_security_headers'));
+        add_action('send_headers', array($this, 'send_additional_security_headers'), 20);
+        add_action('send_headers', array($this, 'send_csp_report_only_header'), 999);
         add_action('init', array($this, 'maybe_serve_well_known'), 1);
 
         add_filter('gform_field_validation', array($this, 'validate_blocked_domains'), 10, 4);
@@ -63,9 +69,15 @@ final class Nubivio_HSH {
         add_action('admin_post_' . self::SCAN_ACTION, array($this, 'handle_run_scan'));
         add_action('admin_post_nubivio_hsh_doc', array($this, 'handle_download_doc'));
         add_action('admin_post_' . self::APPROVE_ACTION, array($this, 'handle_approve_admins'));
+        add_action('admin_post_' . self::CSP_INVENTORY_ACTION, array($this, 'handle_refresh_csp_inventory'));
+        add_action('admin_post_' . self::CSP_TOGGLE_ACTION, array($this, 'handle_toggle_csp'));
+        add_action('admin_post_' . self::CSP_ALLOWLIST_ACTION, array($this, 'handle_csp_allowlist'));
+        add_action('admin_post_' . self::DNS_REFRESH_ACTION, array($this, 'handle_refresh_dns'));
+        add_action('rest_api_init', array($this, 'register_csp_rest_route'));
 
         add_action(self::CRON_HOOK, array($this, 'write_security_txt_file'));
         add_action(self::CRON_HOOK, array($this, 'run_scheduled_scan'));
+        add_action(self::CRON_HOOK, array($this, 'run_csp_inventory_scan'));
     }
 
     /**
@@ -81,6 +93,11 @@ final class Nubivio_HSH {
             'class-integrity.php',
             'class-access.php',
             'class-health.php',
+            'class-headers.php',
+            'class-hsts.php',
+            'class-dns.php',
+            'class-csp.php',
+            'class-tls.php',
             'class-score.php',
             'class-scanner.php',
             'class-docs.php',
@@ -174,6 +191,24 @@ final class Nubivio_HSH {
             'permissions_value'   => $this->default_permissions_policy(),
 
             'strip_legacy'        => 1,
+
+            // Additional optional hardening headers (v2.4.0).
+            'coop_enabled' => 0,
+            'coop_value' => 'same-origin',
+            'coep_enabled' => 0,
+            'coep_value' => 'credentialless',
+            'corp_enabled' => 0,
+            'corp_value' => 'same-site',
+            'permissions_policy_enabled' => 0,
+            'permissions_policy_value' => 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(), gyroscope=(), screen-capture=(), interest-cohort=()',
+
+            // DNS and CSP report-only dashboard (v2.4.0).
+            'dns_dkim_selectors' => '',
+            'dns_use_doh' => 0,
+            'csp_seen_hosts' => array(),
+            'csp_inventory_at' => 0,
+            'csp_inline_scripts' => 0,
+            'csp_violations' => array(),
 
             // security.txt
             'sectxt_enabled'      => 1,
@@ -278,6 +313,27 @@ final class Nubivio_HSH {
         return trim(str_replace(array("\r", "\n"), ' ', (string) $value));
     }
 
+    /** Additive optional cross-origin headers. */
+    public function send_additional_security_headers() {
+        if (class_exists('Nubivio_HSH_Headers')) {
+            (new Nubivio_HSH_Headers($this))->emit();
+        }
+    }
+
+    /** Emit the v2.4 report-only policy only after a manual inventory exists. */
+    public function send_csp_report_only_header() {
+        if (class_exists('Nubivio_HSH_Csp')) {
+            (new Nubivio_HSH_Csp($this))->emit_report_only_header();
+        }
+    }
+
+    /** Register the public browser report endpoint. */
+    public function register_csp_rest_route() {
+        if (class_exists('Nubivio_HSH_Csp')) {
+            (new Nubivio_HSH_Csp($this))->register_route();
+        }
+    }
+
     public function preview_headers() {
         $o = $this->get_options();
         $out = array();
@@ -296,6 +352,11 @@ final class Nubivio_HSH {
         if (!empty($o['nosniff_enabled']))     $out['X-Content-Type-Options'] = 'nosniff';
         if (!empty($o['xfo_enabled']))         $out['X-Frame-Options'] = $o['xfo_value'];
         if (!empty($o['permissions_enabled'])) $out['Permissions-Policy'] = $o['permissions_value'];
+        foreach (array('coop' => 'Cross-Origin-Opener-Policy', 'coep' => 'Cross-Origin-Embedder-Policy', 'corp' => 'Cross-Origin-Resource-Policy', 'permissions_policy' => 'Permissions-Policy') as $key => $name) {
+            if (!empty($o[$key . '_enabled']) && trim((string) $o[$key . '_value']) !== '') {
+                $out[$name] = $this->clean_header_value($o[$key . '_value']);
+            }
+        }
 
         return $out;
     }
@@ -634,6 +695,7 @@ final class Nubivio_HSH {
             'hsts_enabled','hsts_subdomains','hsts_preload',
             'csp_enabled','csp_report_only','referrer_enabled','nosniff_enabled',
             'xfo_enabled','permissions_enabled','strip_legacy',
+            'coop_enabled','coep_enabled','corp_enabled','permissions_policy_enabled','dns_use_doh',
             'sectxt_enabled','sectxt_love','gf_block_enabled',
         ) as $key) {
             $clean[$key] = empty($in[$key]) ? 0 : 1;
@@ -651,6 +713,10 @@ final class Nubivio_HSH {
         $clean['sectxt_hiring']     = esc_url_raw($in['sectxt_hiring'] ?? '');
         $clean['sectxt_csaf']       = esc_url_raw($in['sectxt_csaf'] ?? '');
         $clean['gf_block_message']  = isset($in['gf_block_message']) ? sanitize_text_field($in['gf_block_message']) : $d['gf_block_message'];
+        $clean['dns_dkim_selectors'] = isset($in['dns_dkim_selectors']) ? $this->sanitize_multiline($in['dns_dkim_selectors'], false) : $d['dns_dkim_selectors'];
+        foreach (array('coop_value', 'coep_value', 'corp_value', 'permissions_policy_value') as $key) {
+            $clean[$key] = isset($in[$key]) ? sanitize_text_field(str_replace(array("\r", "\n"), ' ', (string) $in[$key])) : $d[$key];
+        }
 
         $clean['csp_policy']        = $this->sanitize_multiline($in['csp_policy'] ?? $d['csp_policy'], true);
         $clean['permissions_value'] = $this->sanitize_multiline($in['permissions_value'] ?? $d['permissions_value'], true);
@@ -665,6 +731,10 @@ final class Nubivio_HSH {
         // approve action or the first scan; never reset it from this form.
         $current = $this->get_options();
         $clean['baseline'] = isset($current['baseline']) && is_array($current['baseline']) ? $current['baseline'] : array();
+        $clean['csp_seen_hosts'] = isset($current['csp_seen_hosts']) && is_array($current['csp_seen_hosts']) ? $current['csp_seen_hosts'] : array();
+        $clean['csp_inventory_at'] = isset($current['csp_inventory_at']) ? (int) $current['csp_inventory_at'] : 0;
+        $clean['csp_inline_scripts'] = isset($current['csp_inline_scripts']) ? (int) $current['csp_inline_scripts'] : 0;
+        $clean['csp_violations'] = isset($current['csp_violations']) && is_array($current['csp_violations']) ? $current['csp_violations'] : array();
 
         update_option(self::OPTION, wp_parse_args($clean, $d));
 
@@ -806,6 +876,19 @@ final class Nubivio_HSH {
         wp_safe_redirect(add_query_arg('approved', '1', $redirect));
         exit;
     }
+
+    /** New v2.4.0 actions are all capability and nonce protected. */
+    private function verify_v240_action($action) {
+        if (!current_user_can('manage_options')) { wp_die(esc_html__('You are not allowed to perform this action.', 'nubivio-healthcare-security-hardening')); }
+        $nonce = isset($_REQUEST['_wpnonce']) ? sanitize_text_field(wp_unslash($_REQUEST['_wpnonce'])) : '';
+        if (!$nonce || !wp_verify_nonce($nonce, $action)) { wp_die(esc_html__('Security check failed.', 'nubivio-healthcare-security-hardening')); }
+    }
+    private function v240_redirect($query = array()) { $base = add_query_arg(array('page' => self::SLUG, 'tab' => 'compliance'), admin_url('options-general.php')); wp_safe_redirect(add_query_arg($query, $base)); exit; }
+    public function handle_refresh_csp_inventory() { $this->verify_v240_action(self::CSP_INVENTORY_ACTION); $ok = class_exists('Nubivio_HSH_Csp') && (new Nubivio_HSH_Csp($this))->refresh_inventory(); $this->v240_redirect(array('csp_inventory' => $ok ? 'done' : 'failed')); }
+    public function handle_toggle_csp() { $this->verify_v240_action(self::CSP_TOGGLE_ACTION); $o = $this->get_options(); $o['csp_enabled'] = empty($o['csp_enabled']) ? 1 : 0; $o['csp_report_only'] = 1; update_option(self::OPTION, $o); $this->v240_redirect(array('csp_toggle' => 'done')); }
+    public function handle_csp_allowlist() { $this->verify_v240_action(self::CSP_ALLOWLIST_ACTION); $directive = isset($_POST['directive']) ? sanitize_text_field(wp_unslash($_POST['directive'])) : ''; $blocked = isset($_POST['blocked_uri']) ? esc_url_raw(wp_unslash($_POST['blocked_uri'])) : ''; if (class_exists('Nubivio_HSH_Csp')) (new Nubivio_HSH_Csp($this))->add_to_allowlist($directive, $blocked); $this->v240_redirect(array('csp_allowlist' => 'done')); }
+    public function handle_refresh_dns() { $this->verify_v240_action(self::DNS_REFRESH_ACTION); $host = strtolower((string) wp_parse_url(home_url(), PHP_URL_HOST)); if (class_exists('Nubivio_HSH_Dns')) Nubivio_HSH_Dns::clear_cache($host); $this->v240_redirect(array('dns_refresh' => 'done')); }
+    public function run_csp_inventory_scan() { $o = $this->get_options(); if (!empty($o['csp_enabled']) && class_exists('Nubivio_HSH_Csp')) (new Nubivio_HSH_Csp($this))->run_inventory_scan(); }
 
     /**
      * Stream a generated compliance document (VDP, SBOM, conformity, report).
@@ -1063,6 +1146,27 @@ final class Nubivio_HSH {
                         <?php $this->cb('strip_legacy', __('Actively remove deprecated headers (X-XSS-Protection, Expect-CT)', 'nubivio-healthcare-security-hardening'), $o, __('Both are deprecated. X-XSS-Protection can open new holes in old browsers; Expect-CT no longer does anything.', 'nubivio-healthcare-security-hardening')); ?>
                     </div>
                 </div>
+
+                <div class="ns-card">
+                    <h2><?php esc_html_e('Additional security headers', 'nubivio-healthcare-security-hardening'); ?></h2>
+                    <?php $additional_headers = array(
+                        'coop' => array('Cross-Origin-Opener-Policy', 'same-origin', __('Caution: same-origin can break OAuth popups.', 'nubivio-healthcare-security-hardening')),
+                        'coep' => array('Cross-Origin-Embedder-Policy', 'credentialless', __('Caution: require-corp can break embeds such as YouTube or Vimeo.', 'nubivio-healthcare-security-hardening')),
+                        'corp' => array('Cross-Origin-Resource-Policy', 'same-site', ''),
+                        'permissions_policy' => array('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(), gyroscope=(), screen-capture=(), interest-cohort=()', ''),
+                    ); foreach ($additional_headers as $key => $header): ?>
+                        <div class="ns-field">
+                            <?php $this->cb($key . '_enabled', $header[0], $o, $header[2]); ?>
+                            <div class="ns-sub"><textarea name="<?php echo esc_attr($key . '_value'); ?>" rows="2" class="ns-input ns-area" data-safe-default="<?php echo esc_attr($header[1]); ?>"><?php echo esc_textarea($o[$key . '_value']); ?></textarea><button type="button" class="ns-btn ns-btn-ghost ns-reset-header"><?php esc_html_e('Reset to safe default', 'nubivio-healthcare-security-hardening'); ?></button></div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <div class="ns-card">
+                    <h2><?php esc_html_e('DNS health', 'nubivio-healthcare-security-hardening'); ?></h2>
+                    <div class="ns-field"><label class="ns-strong"><?php esc_html_e('Additional DKIM selectors (comma or newline separated)', 'nubivio-healthcare-security-hardening'); ?></label><?php $this->area('dns_dkim_selectors', $o, 2); ?></div>
+                    <div class="ns-field ns-field-flat"><?php $this->cb('dns_use_doh', __('Also validate DNSSEC via Cloudflare DoH (optional, sends the hostname to cloudflare-dns.com)', 'nubivio-healthcare-security-hardening'), $o); ?></div>
+                </div>
+                <div class="ns-card"><h2><?php esc_html_e('CSP report-only', 'nubivio-healthcare-security-hardening'); ?></h2><p class="ns-card-intro"><?php esc_html_e('The Content-Security-Policy setting above controls report-only collection. Run an inventory before enabling it. This release reports without blocking.', 'nubivio-healthcare-security-hardening'); ?></p></div>
 
                 <div class="ns-card">
                     <h2><?php esc_html_e('security.txt', 'nubivio-healthcare-security-hardening'); ?> <span class="ns-tag">RFC 9116</span></h2>

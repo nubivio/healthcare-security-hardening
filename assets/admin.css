@@ -111,3 +111,10 @@
 #nubivio-hsh .ns-file-list li:last-child{border-bottom:none;}
 #nubivio-hsh .ns-file-list .ns-chip{margin-left:8px;}
 #nubivio-hsh .ns-approve-form{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;}
+
+/* v2.4.0 additional hardening and compliance cards */
+#nubivio-hsh .ns-v240-warning{background:#fbe4e4;border-left:4px solid var(--danger);color:#7d201b;padding:12px 14px;margin:14px 0;font-size:13px;line-height:1.5;}
+#nubivio-hsh .ns-copy{margin-left:7px;border:1px solid var(--p);background:#fff;color:var(--p);border-radius:6px;padding:3px 7px;font-size:11px;font-weight:700;cursor:pointer;}
+#nubivio-hsh .ns-copy:hover{background:var(--info-bg);}
+#nubivio-hsh .ns-evidence-table form{margin:0;}
+#nubivio-hsh .ns-evidence-table .ns-btn{padding:6px 10px;font-size:11px;white-space:nowrap;}

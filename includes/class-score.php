@@ -55,7 +55,16 @@ class Nubivio_HSH_Score {
         if (!empty($o['referrer_enabled']) && !empty($o['nosniff_enabled']) && !empty($o['xfo_enabled']) && !empty($o['permissions_enabled'])) {
             $header_bonus += 2;
         }
-        $header_bonus = min(8, $header_bonus);
+        $additional_header_bonus = 0;
+        foreach (array('coop', 'coep', 'corp', 'permissions_policy') as $header) {
+            if (!empty($o[$header . '_enabled']) && trim((string) $o[$header . '_value']) !== '') {
+                $additional_header_bonus++;
+            }
+        }
+        // Advanced headers are opt-in and may contribute no more than +5 together.
+        $additional_header_bonus = min(5, $additional_header_bonus);
+        $header_bonus += $additional_header_bonus;
+        $header_bonus = min(13, $header_bonus);
 
         // security.txt bonus (up to +4).
         $sectxt_bonus = 0;
@@ -95,6 +104,7 @@ class Nubivio_HSH_Score {
                 'medium'       => $medium,
                 'health_fails' => $health_fails,
                 'header_bonus' => (int) $header_bonus,
+                'additional_header_bonus' => (int) $additional_header_bonus,
                 'sectxt_bonus' => (int) $sectxt_bonus,
             ),
         );

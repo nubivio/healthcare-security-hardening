@@ -5,9 +5,7 @@
 	}
 	var cb = root.querySelector('input[name="sectxt_love"]');
 	var msg = document.getElementById('nhsh-love-msg');
-	if (!cb || !msg) {
-		return;
-	}
+	if (cb && msg) {
 	function update() {
 		if (cb.checked) {
 			msg.style.display = 'none';
@@ -19,6 +17,7 @@
 	}
 	cb.addEventListener('change', update);
 	update();
+	}
 
 	var scanForm = root.querySelector('.ns-scan-form');
 	if (scanForm) {
@@ -28,4 +27,21 @@
 			}
 		});
 	}
+
+	root.querySelectorAll('.ns-reset-header').forEach(function (button) {
+		button.addEventListener('click', function () {
+			var area = button.parentNode.querySelector('textarea[data-safe-default]');
+			if (area) {
+				area.value = area.getAttribute('data-safe-default') || '';
+			}
+		});
+	});
+	root.querySelectorAll('.ns-copy').forEach(function (button) {
+		button.addEventListener('click', function () {
+			var value = button.getAttribute('data-copy') || '';
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(value);
+			}
+		});
+	});
 })();

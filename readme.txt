@@ -4,7 +4,7 @@ Tags: security, security-txt, nis2, hsts, headers
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.3.1
+Stable tag: 2.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,6 +34,7 @@ It covers four areas:
 * X-Frame-Options
 * Permissions-Policy
 * Active removal of the deprecated X-XSS-Protection and Expect-CT headers
+* Optional COOP, COEP credentialless, CORP and an extended Permissions-Policy
 
 **security.txt (RFC 9116)**
 
@@ -55,6 +56,7 @@ It covers four areas:
 * Access and integrity: an approved administrator baseline, recently created admins, roles and users with unexpected administrator capabilities, an application password audit, a must-use plugin audit and a siteurl sanity check (new in 2.3.0)
 * Live verification that your configured security headers are actually being sent, not just set
 * Security headers and security.txt shown as compliance evidence, mapped to the relevant NIS2, CRA and GDPR clauses
+* HSTS preload readiness, DNS health (SPF, DMARC, DKIM, CAA, MTA-STS, DNSSEC and AAAA), CSP report-only inventory and violation viewer, SRI detector, and TLS certificate overview (new in 2.4.0)
 * One-click documents generated from your own settings: a Vulnerability Disclosure Policy, a CycloneDX SBOM, an EU and NEN 7510 conformity declaration, and a printable compliance report
 
 **Gravity Forms (optional)**
@@ -125,6 +127,19 @@ When a compliance scan runs, the plugin makes a request to its own home URL to v
 * Timeout: short (8 seconds). Result cached in a transient for 10 minutes.
 * If the request fails (some hardened hosts block self-requests), the plugin falls back to showing configured values and reports that live verification was unavailable.
 
+**Cloudflare DNS over HTTPS (optional)**
+
+When you opt in to DNSSEC validation through Cloudflare DoH, the plugin sends only the site hostname to Cloudflare's DNS resolver.
+
+* What is sent: the site hostname. No personal data or site content.
+* When: only during a manual or scheduled compliance scan, and only when the optional DNSSEC DoH setting is enabled.
+* Endpoint: https://cloudflare-dns.com/dns-query
+* Caching: response is cached in a transient for 6 hours.
+
+**Local CSP report endpoint**
+
+When CSP report-only is enabled, browsers may POST reports to the local endpoint /wp-json/nubivio-hsh/v1/csp-report. This is not an outbound or third-party service call. Reports are rate-limited and stored as a rolling local option buffer.
+
 == Screenshots ==
 
 1. The Nubivio Security settings page: header status card with the live security.txt state, the security headers section with per-header toggles, and the RFC 9116 security.txt fields.
@@ -132,6 +147,14 @@ When a compliance scan runs, the plugin makes a request to its own home URL to v
 3. The compliance score at a glance, with the red / amber / green band and the high, medium and low finding counts.
 
 == Changelog ==
+
+= 2.4.0 =
+* Additional optional hardening headers: COOP, COEP credentialless, CORP and extended Permissions-Policy
+* HSTS preload readiness check and Compliance card
+* DNS health dashboard for SPF, DMARC, DKIM, CAA, MTA-STS, DNSSEC indicator with optional Cloudflare DoH validation, and AAAA
+* CSP report-only phase 1: inventory scanner, local browser report endpoint, violation viewer and add-to-allowlist action
+* SRI audit detector for external script and stylesheet candidates, without auto-injection
+* TLS overview card for certificate expiry, signature algorithm, subject and SANs, plus DANE/TLSA presence
 
 = 2.3.1 =
 * Compatibility: tested on WordPress 7.1. No code changes; all scanners verified against the 7.1 API surface.
@@ -186,6 +209,9 @@ When a compliance scan runs, the plugin makes a request to its own home URL to v
 * Gravity Forms email-domain blocking, shown only when Gravity Forms is active
 
 == Upgrade Notice ==
+
+= 2.4.0 =
+Adds optional advanced hardening headers, HSTS preload readiness, DNS and TLS overview cards, and CSP report-only monitoring. Existing hardening remains unchanged; CSP report-only is off until you enable it.
 
 = 2.3.1 =
 Compatibility bump for WordPress 7.1. No functional changes.
