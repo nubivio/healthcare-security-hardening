@@ -267,4 +267,60 @@ class Nubivio_HSH_Health {
     private function check($label, $status, $detail) {
         return array('label' => $label, 'status' => $status, 'detail' => $detail);
     }
+
+    /**
+     * Site-health row for the cookies module. Warns when any cookie attribute
+     * issue or pre-consent tracker exposure exists in the summary.
+     *
+     * @param array $summary Summary from Nubivio_HSH_Cookies::run().
+     * @return array{label:string,status:string,detail:string}
+     */
+    public static function cookies_row($summary) {
+        if (class_exists('Nubivio_HSH_Cookies')) {
+            return Nubivio_HSH_Cookies::health_row(is_array($summary) ? $summary : array());
+        }
+        return array(
+            'label'  => __('Cookies and trackers', 'nubivio-healthcare-security-hardening'),
+            'status' => 'pass',
+            'detail' => __('Cookies module not loaded.', 'nubivio-healthcare-security-hardening'),
+        );
+    }
+
+    /**
+     * Site-health row for the CSP effectiveness grade. A/B pass, C warns,
+     * D/F fail. Any missing grade string is treated as a warn.
+     *
+     * @param array $summary Summary array from Nubivio_HSH_Csp::run().
+     * @return array{label:string,status:string,detail:string}
+     */
+    public static function csp_grade_row($summary) {
+        $grade = '';
+        if (is_array($summary) && isset($summary['grade'])) {
+            $g = $summary['grade'];
+            if (is_array($g) && isset($g['grade'])) {
+                $grade = strtoupper((string) $g['grade']);
+            } elseif (is_string($g)) {
+                $grade = strtoupper($g);
+            }
+        }
+        $label = __('CSP effectiveness', 'nubivio-healthcare-security-hardening');
+        if ($grade === 'A' || $grade === 'B') {
+            $status = 'pass';
+        } elseif ($grade === 'C') {
+            $status = 'warn';
+        } elseif ($grade === 'D' || $grade === 'F') {
+            $status = 'fail';
+        } else {
+            $status = 'warn';
+            $grade  = '';
+        }
+        $detail = $grade === ''
+            ? __('CSP grade unavailable; run a scan first.', 'nubivio-healthcare-security-hardening')
+            : sprintf(
+                /* translators: %s: CSP grade letter A to F. */
+                __('CSP policy graded %s.', 'nubivio-healthcare-security-hardening'),
+                $grade
+            );
+        return array('label' => $label, 'status' => $status, 'detail' => $detail);
+    }
 }

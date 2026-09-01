@@ -134,6 +134,12 @@ class Nubivio_HSH_Scanner {
         if (class_exists('Nubivio_HSH_Access') && !empty($access['report'])) {
             $extra_rows[] = Nubivio_HSH_Access::health_row($access['report']);
         }
+        if (class_exists('Nubivio_HSH_Cookies') && !empty($cookies['summary'])) {
+            $extra_rows[] = Nubivio_HSH_Health::cookies_row($cookies['summary']);
+        }
+        if (isset($results['csp']['summary']) && is_array($results['csp']['summary'])) {
+            $extra_rows[] = Nubivio_HSH_Health::csp_grade_row($results['csp']['summary']);
+        }
         $health = $this->health()->run($extra_rows);
         $results['health'] = $health;
 
