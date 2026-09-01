@@ -39,6 +39,21 @@ class Nubivio_HSH_Csp {
             $counts['low']++;
         }
 
+        $policy_string = $this->build_policy_string($o);
+        $grade         = $this->grade_policy($policy_string);
+        if ($grade['score'] < 70) {
+            $findings[] = array(
+                'severity' => 'low',
+                'message'  => sprintf(
+                    /* translators: 1: grade letter, 2: numeric score. */
+                    __('Current CSP effectiveness is %1$s (%2$d/100); review the listed issues to strengthen the policy.', 'nubivio-healthcare-security-hardening'),
+                    $grade['grade'],
+                    (int) $grade['score']
+                ),
+            );
+            $counts['low']++;
+        }
+
         return array(
             'findings' => $findings,
             'counts'   => $counts,
@@ -49,6 +64,8 @@ class Nubivio_HSH_Csp {
                 'seen_hosts'     => isset($o['csp_seen_hosts']) ? (array) $o['csp_seen_hosts'] : array(),
                 'violations'     => isset($o['csp_violations']) ? (array) $o['csp_violations'] : array(),
                 'sri'            => $sri,
+                'grade'          => $grade,
+                'policy_string'  => $policy_string,
             ),
         );
     }
@@ -148,6 +165,21 @@ class Nubivio_HSH_Csp {
         if (empty($o['csp_enabled']) || empty($o['csp_inventory_at'])) {
             return;
         }
+        $policy = $this->build_policy_string($o);
+        header('Content-Security-Policy-Report-Only: ' . preg_replace('/\s+/', ' ', trim($policy)), true);
+    }
+
+    /**
+     * Build the CSP policy string from options and inventoried hosts.
+     *
+     * The output is a single-line policy suitable for either the
+     * `Content-Security-Policy-Report-Only` or the enforcing
+     * `Content-Security-Policy` header, depending on the caller.
+     *
+     * @param array $o Plugin options array.
+     * @return string CSP policy string.
+     */
+    public function build_policy_string($o) {
         $seen = isset($o['csp_seen_hosts']) ? (array) $o['csp_seen_hosts'] : array();
 
         $part = function ($directive) use ($seen) {
@@ -174,7 +206,156 @@ class Nubivio_HSH_Csp {
             . "object-src 'none'; "
             . 'report-uri /wp-json/nubivio-hsh/v1/csp-report';
 
-        header('Content-Security-Policy-Report-Only: ' . preg_replace('/\s+/', ' ', trim($policy)), true);
+        return preg_replace('/\s+/', ' ', trim($policy));
+    }
+
+    /**
+     * Grade a CSP policy string on effectiveness.
+     *
+     * Deducts points from a baseline of 100 for known weakening patterns
+     * (`unsafe-inline`, wildcards, JSONP-bypass hosts, missing hardening
+     * directives, ...). Returns a grade letter, the raw score and the list
+     * of issues that were detected. This is a heuristic, not a formal audit.
+     *
+     * @param string $policy_string CSP policy string.
+     * @return array{grade:string,score:int,issues:array<int,string>}
+     */
+    public function grade_policy($policy_string) {
+        $score  = 100;
+        $issues = array();
+        $policy = (string) $policy_string;
+
+        $directives = array();
+        foreach (preg_split('/;\s*/', $policy) as $chunk) {
+            $chunk = trim($chunk);
+            if ($chunk === '') {
+                continue;
+            }
+            $parts = preg_split('/\s+/', $chunk);
+            $name  = strtolower((string) array_shift($parts));
+            if ($name === '') {
+                continue;
+            }
+            $directives[$name] = $parts;
+        }
+
+        $script_src = isset($directives['script-src']) ? $directives['script-src'] : array();
+        $style_src  = isset($directives['style-src']) ? $directives['style-src'] : array();
+
+        if (in_array("'unsafe-inline'", $script_src, true)) {
+            $score   -= 25;
+            $issues[] = __("script-src allows 'unsafe-inline'", 'nubivio-healthcare-security-hardening');
+        }
+        if (in_array("'unsafe-eval'", $script_src, true)) {
+            $score   -= 25;
+            $issues[] = __("script-src allows 'unsafe-eval'", 'nubivio-healthcare-security-hardening');
+        }
+        if (in_array('*', $script_src, true) || in_array('*', $style_src, true)) {
+            $score   -= 20;
+            $issues[] = __('script-src or style-src uses wildcard (*) source', 'nubivio-healthcare-security-hardening');
+        }
+        if (in_array('data:', $script_src, true)) {
+            $score   -= 15;
+            $issues[] = __('script-src allows data: URIs', 'nubivio-healthcare-security-hardening');
+        }
+        if (in_array('blob:', $script_src, true)) {
+            $score   -= 10;
+            $issues[] = __('script-src allows blob: URIs', 'nubivio-healthcare-security-hardening');
+        }
+
+        foreach ($script_src as $src) {
+            if (stripos($src, 'http://') === 0) {
+                $score   -= 10;
+                $issues[] = sprintf(
+                    /* translators: %s: plaintext HTTP source in CSP. */
+                    __('script-src includes non-HTTPS source %s', 'nubivio-healthcare-security-hardening'),
+                    $src
+                );
+                break;
+            }
+        }
+        foreach ($style_src as $src) {
+            if (stripos($src, 'http://') === 0) {
+                $score   -= 10;
+                $issues[] = sprintf(
+                    /* translators: %s: plaintext HTTP source in CSP. */
+                    __('style-src includes non-HTTPS source %s', 'nubivio-healthcare-security-hardening'),
+                    $src
+                );
+                break;
+            }
+        }
+
+        $bypass_hosts = array('googleapis.com', 'ajax.googleapis.com', 'cdnjs.cloudflare.com');
+        foreach ($bypass_hosts as $host) {
+            foreach ($script_src as $src) {
+                if ($this->script_src_matches_host($src, $host)) {
+                    $score   -= 10;
+                    $issues[] = sprintf(
+                        /* translators: %s: JSONP-bypass host name. */
+                        __('script-src allows JSONP-bypass host %s without a path restriction', 'nubivio-healthcare-security-hardening'),
+                        $host
+                    );
+                    break;
+                }
+            }
+        }
+
+        if (!isset($directives['form-action'])) {
+            $score   -= 5;
+            $issues[] = __('form-action directive is missing', 'nubivio-healthcare-security-hardening');
+        }
+        $object_src = isset($directives['object-src']) ? $directives['object-src'] : array();
+        if (!in_array("'none'", $object_src, true)) {
+            $score   -= 5;
+            $issues[] = __("object-src 'none' directive is missing", 'nubivio-healthcare-security-hardening');
+        }
+
+        if ($score < 0) {
+            $score = 0;
+        }
+        if ($score > 100) {
+            $score = 100;
+        }
+        if ($score >= 85) {
+            $grade = 'A';
+        } elseif ($score >= 70) {
+            $grade = 'B';
+        } elseif ($score >= 55) {
+            $grade = 'C';
+        } elseif ($score >= 40) {
+            $grade = 'D';
+        } else {
+            $grade = 'F';
+        }
+
+        return array('grade' => $grade, 'score' => (int) $score, 'issues' => $issues);
+    }
+
+    /**
+     * Determine whether a script-src entry matches a JSONP-bypass host
+     * without a path restriction (path restrictions materially reduce risk).
+     *
+     * @param string $src  Single script-src entry.
+     * @param string $host Bypass host name to match against.
+     * @return bool True when the host is present without a path.
+     */
+    private function script_src_matches_host($src, $host) {
+        $entry = trim((string) $src);
+        if ($entry === '' || $entry[0] === "'") {
+            return false;
+        }
+        $entry_host = $entry;
+        if (strpos($entry_host, '://') !== false) {
+            $entry_host = (string) wp_parse_url($entry, PHP_URL_HOST);
+            $path       = (string) wp_parse_url($entry, PHP_URL_PATH);
+            if ($path !== '' && $path !== '/') {
+                return false;
+            }
+        } elseif (strpos($entry_host, '/') !== false) {
+            return false;
+        }
+        return strtolower($entry_host) === strtolower($host);
     }
 
     public function register_route() {
