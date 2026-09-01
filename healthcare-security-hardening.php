@@ -32,6 +32,7 @@ final class Nubivio_HSH {
     const APPROVE_ACTION = 'nubivio_hsh_approve_admins';
     const CSP_INVENTORY_ACTION = 'nubivio_hsh_refresh_csp_inventory';
     const CSP_TOGGLE_ACTION = 'nubivio_hsh_toggle_csp';
+    const CSP_ENFORCE_TOGGLE_ACTION = 'nubivio_hsh_toggle_csp_enforce';
     const CSP_ALLOWLIST_ACTION = 'nubivio_hsh_csp_allowlist';
     const DNS_REFRESH_ACTION = 'nubivio_hsh_refresh_dns';
 
@@ -71,7 +72,9 @@ final class Nubivio_HSH {
         add_action('admin_post_' . self::APPROVE_ACTION, array($this, 'handle_approve_admins'));
         add_action('admin_post_' . self::CSP_INVENTORY_ACTION, array($this, 'handle_refresh_csp_inventory'));
         add_action('admin_post_' . self::CSP_TOGGLE_ACTION, array($this, 'handle_toggle_csp'));
+        add_action('admin_post_' . self::CSP_ENFORCE_TOGGLE_ACTION, array($this, 'handle_toggle_csp_enforce'));
         add_action('admin_post_' . self::CSP_ALLOWLIST_ACTION, array($this, 'handle_csp_allowlist'));
+        add_action('admin_notices', array($this, 'maybe_notice_csp_enforce_fallback'));
         add_action('admin_post_' . self::DNS_REFRESH_ACTION, array($this, 'handle_refresh_dns'));
         add_action('rest_api_init', array($this, 'register_csp_rest_route'));
 
@@ -209,6 +212,7 @@ final class Nubivio_HSH {
             'csp_inventory_at' => 0,
             'csp_inline_scripts' => 0,
             'csp_violations' => array(),
+            'csp_enforce_enabled' => 0,
 
             // security.txt
             'sectxt_enabled'      => 1,
@@ -735,6 +739,7 @@ final class Nubivio_HSH {
         $clean['csp_inventory_at'] = isset($current['csp_inventory_at']) ? (int) $current['csp_inventory_at'] : 0;
         $clean['csp_inline_scripts'] = isset($current['csp_inline_scripts']) ? (int) $current['csp_inline_scripts'] : 0;
         $clean['csp_violations'] = isset($current['csp_violations']) && is_array($current['csp_violations']) ? $current['csp_violations'] : array();
+        $clean['csp_enforce_enabled'] = !empty($current['csp_enforce_enabled']) ? 1 : 0;
 
         update_option(self::OPTION, wp_parse_args($clean, $d));
 
@@ -886,6 +891,47 @@ final class Nubivio_HSH {
     private function v240_redirect($query = array()) { $base = add_query_arg(array('page' => self::SLUG, 'tab' => 'compliance'), admin_url('options-general.php')); wp_safe_redirect(add_query_arg($query, $base)); exit; }
     public function handle_refresh_csp_inventory() { $this->verify_v240_action(self::CSP_INVENTORY_ACTION); $ok = class_exists('Nubivio_HSH_Csp') && (new Nubivio_HSH_Csp($this))->refresh_inventory(); $this->v240_redirect(array('csp_inventory' => $ok ? 'done' : 'failed')); }
     public function handle_toggle_csp() { $this->verify_v240_action(self::CSP_TOGGLE_ACTION); $o = $this->get_options(); $o['csp_enabled'] = empty($o['csp_enabled']) ? 1 : 0; $o['csp_report_only'] = 1; update_option(self::OPTION, $o); $this->v240_redirect(array('csp_toggle' => 'done')); }
+
+    /**
+     * Toggle the CSP enforce flag. Blocked when the preflight fails so the
+     * report-only header stays in place until observation is sufficient.
+     */
+    public function handle_toggle_csp_enforce() {
+        $this->verify_v240_action(self::CSP_ENFORCE_TOGGLE_ACTION);
+        if (!class_exists('Nubivio_HSH_Csp')) {
+            $this->v240_redirect(array('csp_enforce' => 'unavailable'));
+        }
+        $o        = $this->get_options();
+        $csp      = new Nubivio_HSH_Csp($this);
+        $currently = !empty($o['csp_enforce_enabled']);
+        if (!$currently) {
+            $preflight = $csp->can_enforce();
+            if (empty($preflight['ok'])) {
+                $this->v240_redirect(array('csp_enforce' => 'blocked'));
+            }
+        }
+        $o['csp_enforce_enabled'] = $currently ? 0 : 1;
+        update_option(self::OPTION, $o);
+        delete_transient('nubivio_hsh_csp_last_error');
+        $this->v240_redirect(array('csp_enforce' => $currently ? 'off' : 'on'));
+    }
+
+    /**
+     * Show an admin notice when the CSP enforce fail-safe has fallen back
+     * to report-only after a previous fatal request.
+     */
+    public function maybe_notice_csp_enforce_fallback() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        $flag = get_transient('nubivio_hsh_csp_last_error');
+        if ($flag !== 'fatal') {
+            return;
+        }
+        echo '<div class="notice notice-warning is-dismissible"><p>'
+            . esc_html__('Content-Security-Policy enforcement fell back to report-only after a previous request failed. Review your policy and reload the affected page to retry.', 'nubivio-healthcare-security-hardening')
+            . '</p></div>';
+    }
     public function handle_csp_allowlist() { $this->verify_v240_action(self::CSP_ALLOWLIST_ACTION); $directive = isset($_POST['directive']) ? sanitize_text_field(wp_unslash($_POST['directive'])) : ''; $blocked = isset($_POST['blocked_uri']) ? esc_url_raw(wp_unslash($_POST['blocked_uri'])) : ''; if (class_exists('Nubivio_HSH_Csp')) (new Nubivio_HSH_Csp($this))->add_to_allowlist($directive, $blocked); $this->v240_redirect(array('csp_allowlist' => 'done')); }
     public function handle_refresh_dns() { $this->verify_v240_action(self::DNS_REFRESH_ACTION); $host = strtolower((string) wp_parse_url(home_url(), PHP_URL_HOST)); if (class_exists('Nubivio_HSH_Dns')) Nubivio_HSH_Dns::clear_cache($host); $this->v240_redirect(array('dns_refresh' => 'done')); }
     public function run_csp_inventory_scan() { $o = $this->get_options(); if (!empty($o['csp_enabled']) && class_exists('Nubivio_HSH_Csp')) (new Nubivio_HSH_Csp($this))->run_inventory_scan(); }

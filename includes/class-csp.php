@@ -165,8 +165,88 @@ class Nubivio_HSH_Csp {
         if (empty($o['csp_enabled']) || empty($o['csp_inventory_at'])) {
             return;
         }
-        $policy = $this->build_policy_string($o);
-        header('Content-Security-Policy-Report-Only: ' . preg_replace('/\s+/', ' ', trim($policy)), true);
+        $policy    = $this->build_policy_string($o);
+        $enforce   = !empty($o['csp_enforce_enabled']);
+        $last_err  = get_transient('nubivio_hsh_csp_last_error');
+        $preflight = $this->can_enforce();
+
+        if ($enforce && $preflight['ok'] && !$last_err) {
+            // Fail-safe: mark the request as in-flight before emitting the
+            // enforcing header. A shutdown callback clears the flag on a
+            // clean exit; a fatal error leaves it in place so the next
+            // request falls back to report-only automatically.
+            set_transient('nubivio_hsh_csp_last_error', 'in_flight', MINUTE_IN_SECONDS);
+            register_shutdown_function(array($this, 'clear_enforce_flag_on_shutdown'));
+            header('Content-Security-Policy: ' . $policy, true);
+            return;
+        }
+
+        header('Content-Security-Policy-Report-Only: ' . $policy, true);
+    }
+
+    /**
+     * Shutdown callback: clear the enforce in-flight flag unless PHP is
+     * terminating due to a fatal error. Runs at shutdown to keep the
+     * enforce header active only when the rest of the request completed.
+     */
+    public function clear_enforce_flag_on_shutdown() {
+        $err = function_exists('error_get_last') ? error_get_last() : null;
+        $fatal_mask = E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR | E_RECOVERABLE_ERROR;
+        if (is_array($err) && isset($err['type']) && ((int) $err['type'] & $fatal_mask) !== 0) {
+            set_transient('nubivio_hsh_csp_last_error', 'fatal', 5 * MINUTE_IN_SECONDS);
+            return;
+        }
+        delete_transient('nubivio_hsh_csp_last_error');
+    }
+
+    /**
+     * Preflight check for enforcing the CSP.
+     *
+     * Enforcement is only allowed once the report-only inventory is at least
+     * 14 days old, has recorded hosts, and no fresh violations have arrived
+     * in the last 7 days. Returns the outcome plus a reason string suitable
+     * for display in the admin UI.
+     *
+     * @return array{ok:bool,reason:string}
+     */
+    public function can_enforce() {
+        $o           = $this->core->get_options();
+        $seen        = isset($o['csp_seen_hosts']) ? (array) $o['csp_seen_hosts'] : array();
+        $has_hosts   = false;
+        foreach ($seen as $list) {
+            if (!empty($list)) {
+                $has_hosts = true;
+                break;
+            }
+        }
+        if (!$has_hosts) {
+            return array(
+                'ok'     => false,
+                'reason' => __('The CSP inventory is empty; run Refresh inventory first so the policy has known hosts.', 'nubivio-healthcare-security-hardening'),
+            );
+        }
+
+        $inventory_at = isset($o['csp_inventory_at']) ? (int) $o['csp_inventory_at'] : 0;
+        if ($inventory_at === 0 || (time() - $inventory_at) < 14 * DAY_IN_SECONDS) {
+            return array(
+                'ok'     => false,
+                'reason' => __('Report-only observation must run for at least 14 days before enforcement is safe.', 'nubivio-healthcare-security-hardening'),
+            );
+        }
+
+        $threshold  = time() - 7 * DAY_IN_SECONDS;
+        $violations = isset($o['csp_violations']) ? (array) $o['csp_violations'] : array();
+        foreach ($violations as $item) {
+            $last = isset($item['last_seen']) ? (int) $item['last_seen'] : 0;
+            if ($last >= $threshold) {
+                return array(
+                    'ok'     => false,
+                    'reason' => __('Violations were reported within the last 7 days; resolve or allowlist them before enforcement.', 'nubivio-healthcare-security-hardening'),
+                );
+            }
+        }
+
+        return array('ok' => true, 'reason' => '');
     }
 
     /**

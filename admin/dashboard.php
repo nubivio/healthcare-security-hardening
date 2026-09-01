@@ -358,6 +358,72 @@ $header_clauses = array(
             <p class="ns-desc"><?php esc_html_e('This policy reports without blocking. When you see no new relevant violations for 2 weeks, you are ready to enforce (coming in v2.5.0).', 'nubivio-healthcare-security-hardening'); ?></p>
             <?php $violations = (array) $csp['violations']; usort($violations, function($a, $b) { return (int) $b['count'] <=> (int) $a['count']; }); if ($violations): ?><table class="ns-evidence-table"><thead><tr><th><?php esc_html_e('Directive', 'nubivio-healthcare-security-hardening'); ?></th><th><?php esc_html_e('Blocked URI', 'nubivio-healthcare-security-hardening'); ?></th><th><?php esc_html_e('First / last seen', 'nubivio-healthcare-security-hardening'); ?></th><th><?php esc_html_e('Count', 'nubivio-healthcare-security-hardening'); ?></th><th><?php esc_html_e('Action', 'nubivio-healthcare-security-hardening'); ?></th></tr></thead><tbody><?php foreach ($violations as $v): ?><tr><td><?php echo esc_html($v['directive']); ?></td><td><code><?php echo esc_html($v['blocked_uri']); ?></code></td><td><?php echo esc_html(date_i18n(get_option('date_format'), (int) $v['first_seen']) . ' / ' . date_i18n(get_option('date_format'), (int) $v['last_seen'])); ?></td><td><?php echo (int) $v['count']; ?></td><td><form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"><input type="hidden" name="action" value="<?php echo esc_attr(Nubivio_HSH::CSP_ALLOWLIST_ACTION); ?>"><input type="hidden" name="directive" value="<?php echo esc_attr($v['directive']); ?>"><input type="hidden" name="blocked_uri" value="<?php echo esc_attr($v['blocked_uri']); ?>"><?php wp_nonce_field(Nubivio_HSH::CSP_ALLOWLIST_ACTION); ?><button type="submit" class="ns-btn ns-btn-ghost"><?php esc_html_e('Add to allowlist', 'nubivio-healthcare-security-hardening'); ?></button></form></td></tr><?php endforeach; ?></tbody></table><?php else: ?><p class="ns-ok-line"><?php esc_html_e('No violations received yet.', 'nubivio-healthcare-security-hardening'); ?></p><?php endif; ?>
             <h3><?php esc_html_e('SRI audit', 'nubivio-healthcare-security-hardening'); ?></h3><p><?php esc_html_e('Dynamic scripts (SRI not applicable)', 'nubivio-healthcare-security-hardening'); ?>: <?php echo esc_html(implode(', ', (array) $csp['sri']['dynamic'])); ?></p><p><?php esc_html_e('Candidates for SRI', 'nubivio-healthcare-security-hardening'); ?>: <?php echo esc_html(implode(', ', (array) $csp['sri']['candidates'])); ?></p>
+            <?php
+            $csp_grade      = isset($csp['grade']) ? $csp['grade'] : array('grade' => 'F', 'score' => 0, 'issues' => array());
+            $enforce_action = wp_nonce_url(
+                admin_url('admin-post.php?action=' . Nubivio_HSH::CSP_ENFORCE_TOGGLE_ACTION),
+                Nubivio_HSH::CSP_ENFORCE_TOGGLE_ACTION
+            );
+            $enforce_on = false;
+            $preflight  = array('ok' => false, 'reason' => '');
+            if (class_exists('Nubivio_HSH_Csp')) {
+                $csp_module = new Nubivio_HSH_Csp(Nubivio_HSH::instance());
+                $preflight  = $csp_module->can_enforce();
+                $opts       = Nubivio_HSH::instance()->get_options();
+                $enforce_on = !empty($opts['csp_enforce_enabled']);
+            }
+            $grade_class = 'ns-chip-ok';
+            if (in_array($csp_grade['grade'], array('C'), true)) {
+                $grade_class = 'ns-chip-medium';
+            } elseif (in_array($csp_grade['grade'], array('D', 'F'), true)) {
+                $grade_class = 'ns-chip-high';
+            }
+            ?>
+            <h3><?php esc_html_e('CSP effectiveness', 'nubivio-healthcare-security-hardening'); ?></h3>
+            <p>
+                <span class="ns-chip <?php echo esc_attr($grade_class); ?>">
+                    <?php echo esc_html(sprintf('%s (%d/100)', $csp_grade['grade'], (int) $csp_grade['score'])); ?>
+                </span>
+            </p>
+            <?php if (!empty($csp_grade['issues'])): ?>
+                <ul class="ns-desc">
+                    <?php foreach ((array) $csp_grade['issues'] as $issue): ?>
+                        <li><?php echo esc_html((string) $issue); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <p class="ns-ok-line">
+                    <?php esc_html_e('No effectiveness issues detected in the generated policy.', 'nubivio-healthcare-security-hardening'); ?>
+                </p>
+            <?php endif; ?>
+            <h3><?php esc_html_e('Enforce CSP', 'nubivio-healthcare-security-hardening'); ?></h3>
+            <p>
+                <span class="ns-chip <?php echo $enforce_on ? 'ns-chip-ok' : 'ns-chip-low'; ?>">
+                    <?php echo $enforce_on
+                        ? esc_html__('enforcing', 'nubivio-healthcare-security-hardening')
+                        : esc_html__('report-only', 'nubivio-healthcare-security-hardening'); ?>
+                </span>
+            </p>
+            <p>
+                <a class="ns-btn ns-btn-ghost <?php echo (!$enforce_on && empty($preflight['ok'])) ? 'disabled' : ''; ?>"
+                   href="<?php echo esc_url($enforce_action); ?>">
+                    <?php echo $enforce_on
+                        ? esc_html__('Switch back to report-only', 'nubivio-healthcare-security-hardening')
+                        : esc_html__('Enforce Content-Security-Policy', 'nubivio-healthcare-security-hardening'); ?>
+                </a>
+            </p>
+            <?php if (!$enforce_on && !empty($preflight['reason'])): ?>
+                <p class="ns-desc"><?php echo esc_html((string) $preflight['reason']); ?></p>
+            <?php elseif ($enforce_on): ?>
+                <p class="ns-desc">
+                    <?php
+                    esc_html_e(
+                        'The plugin now sends Content-Security-Policy. If a fatal error occurs, the fail-safe reverts to report-only automatically for the next request.',
+                        'nubivio-healthcare-security-hardening'
+                    );
+                    ?>
+                </p>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 
