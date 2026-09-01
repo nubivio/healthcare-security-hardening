@@ -542,10 +542,194 @@ $header_clauses = array(
                         ? '<span class="ns-chip ns-chip-ok">' . esc_html__('yes', 'nubivio-healthcare-security-hardening') . '</span>'
                         : '<span class="ns-chip ns-chip-low">' . esc_html__('optional', 'nubivio-healthcare-security-hardening') . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput ?></td>
                 </tr>
+                <?php
+                $docs_sum = isset($scan['frameworks']['docs']['summary']) ? (array) $scan['frameworks']['docs']['summary'] : array();
+                $exp_in   = isset($docs_sum['expires_in']) ? (int) $docs_sum['expires_in'] : null;
+                $drift    = !empty($docs_sum['drift']);
+                ?>
+                <?php if ($exp_in !== null): ?>
+                    <tr>
+                        <td><?php esc_html_e('Expires countdown', 'nubivio-healthcare-security-hardening'); ?></td>
+                        <td>
+                            <?php
+                            $days_left = (int) floor($exp_in / DAY_IN_SECONDS);
+                            $exp_class = $exp_in < 30 * DAY_IN_SECONDS ? 'ns-chip-medium' : 'ns-chip-ok';
+                            $exp_text  = $days_left < 0
+                                ? __('expired', 'nubivio-healthcare-security-hardening')
+                                : sprintf(
+                                    /* translators: %d: days remaining until security.txt expires. */
+                                    _n('%d day left', '%d days left', $days_left, 'nubivio-healthcare-security-hardening'),
+                                    $days_left
+                                );
+                            ?>
+                            <span class="ns-chip <?php echo esc_attr($exp_class); ?>"><?php echo esc_html($exp_text); ?></span>
+                        </td>
+                    </tr>
+                <?php endif; ?>
+                <?php if (isset($scan['frameworks']['docs'])): ?>
+                    <tr>
+                        <td><?php esc_html_e('Published copy drift', 'nubivio-healthcare-security-hardening'); ?></td>
+                        <td><?php echo $drift
+                            ? '<span class="ns-chip ns-chip-low">' . esc_html__('drift detected', 'nubivio-healthcare-security-hardening') . '</span>'
+                            : '<span class="ns-chip ns-chip-ok">' . esc_html__('in sync', 'nubivio-healthcare-security-hardening') . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput ?></td>
+                    </tr>
+                <?php endif; ?>
             </tbody>
         </table>
         <p><a href="<?php echo esc_url($intnl); ?>" target="_blank" rel="noopener">internet.nl/site/<?php echo esc_html($host); ?></a></p>
     </div>
+
+    <?php
+    // Cookies and trackers panel.
+    $ck = isset($scan['frameworks']['cookies']) ? $scan['frameworks']['cookies'] : null;
+    if ($ck):
+        $ck_sum      = isset($ck['summary']) ? (array) $ck['summary'] : array();
+        $ck_cookies  = isset($ck_sum['cookies']) ? (array) $ck_sum['cookies'] : array();
+        $ck_trackers = isset($ck_sum['trackers']) ? (array) $ck_sum['trackers'] : array();
+        $ck_consent  = isset($ck_sum['consent_plugin']) ? (string) $ck_sum['consent_plugin'] : '';
+        ?>
+        <div class="ns-card ns-cookies">
+            <h2><?php esc_html_e('Cookies and trackers (pre-consent)', 'nubivio-healthcare-security-hardening'); ?></h2>
+            <p class="ns-card-intro"><?php
+                esc_html_e(
+                    'This analysis reads what the server sends to an anonymous visitor. Cookies set later by JavaScript are not visible here.',
+                    'nubivio-healthcare-security-hardening'
+                );
+            ?></p>
+            <?php if (empty($ck_cookies)): ?>
+                <p class="ns-ok-line"><?php esc_html_e('No Set-Cookie headers on the home response.', 'nubivio-healthcare-security-hardening'); ?></p>
+            <?php else: ?>
+                <table class="ns-evidence-table">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e('Cookie', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th>Secure</th>
+                            <th>HttpOnly</th>
+                            <th>SameSite</th>
+                            <th><?php esc_html_e('Domain', 'nubivio-healthcare-security-hardening'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($ck_cookies as $c):
+                        $sec_class  = !empty($c['secure']) ? 'ns-chip-ok' : 'ns-chip-high';
+                        $sec_text   = !empty($c['secure']) ? __('yes', 'nubivio-healthcare-security-hardening') : __('no', 'nubivio-healthcare-security-hardening');
+                        $ho_class   = !empty($c['httponly']) ? 'ns-chip-ok' : 'ns-chip-medium';
+                        $ho_text    = !empty($c['httponly']) ? __('yes', 'nubivio-healthcare-security-hardening') : __('no', 'nubivio-healthcare-security-hardening');
+                        $ss_val     = isset($c['samesite']) ? (string) $c['samesite'] : '';
+                        $ss_class   = $ss_val === '' ? 'ns-chip-medium' : 'ns-chip-ok';
+                        $ss_text    = $ss_val === '' ? __('unset', 'nubivio-healthcare-security-hardening') : $ss_val;
+                        ?>
+                        <tr>
+                            <td><code><?php echo esc_html($c['name']); ?></code></td>
+                            <td><span class="ns-chip <?php echo esc_attr($sec_class); ?>"><?php echo esc_html($sec_text); ?></span></td>
+                            <td><span class="ns-chip <?php echo esc_attr($ho_class); ?>"><?php echo esc_html($ho_text); ?></span></td>
+                            <td><span class="ns-chip <?php echo esc_attr($ss_class); ?>"><?php echo esc_html($ss_text); ?></span></td>
+                            <td><?php echo esc_html(isset($c['domain']) ? (string) $c['domain'] : ''); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+
+            <h3><?php esc_html_e('Trackers detected before consent', 'nubivio-healthcare-security-hardening'); ?></h3>
+            <?php if (empty($ck_trackers)): ?>
+                <p class="ns-ok-line"><?php esc_html_e('No known tracker hosts detected in the home response.', 'nubivio-healthcare-security-hardening'); ?></p>
+            <?php else: ?>
+                <ul class="ns-finding-list">
+                <?php foreach ($ck_trackers as $t): ?>
+                    <li><code><?php echo esc_html($t); ?></code></li>
+                <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+
+            <h3><?php esc_html_e('Consent-management plugin', 'nubivio-healthcare-security-hardening'); ?></h3>
+            <?php if ($ck_consent === ''): ?>
+                <span class="ns-chip ns-chip-medium"><?php esc_html_e('none detected', 'nubivio-healthcare-security-hardening'); ?></span>
+            <?php else: ?>
+                <span class="ns-chip ns-chip-ok"><?php echo esc_html($ck_consent); ?></span>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
+    <?php
+    // Compliance mapping panel (NEN 7510 and ISO 27001).
+    $cm = isset($scan['frameworks']['compliance_map']) ? $scan['frameworks']['compliance_map'] : null;
+    if ($cm && !empty($cm['summary'])):
+        $cm_sum = (array) $cm['summary'];
+        $cm_norm_labels = array(
+            'nen7510'  => __('NEN 7510-2:2024', 'nubivio-healthcare-security-hardening'),
+            'iso27001' => __('ISO 27001:2022 Annex A', 'nubivio-healthcare-security-hardening'),
+        );
+        ?>
+        <div class="ns-card ns-compliance-map">
+            <h2><?php esc_html_e('Standards mapping', 'nubivio-healthcare-security-hardening'); ?></h2>
+            <p class="ns-card-intro"><?php echo esc_html(Nubivio_HSH_Compliance_Map::disclaimer_text()); ?></p>
+            <?php foreach ($cm_norm_labels as $norm_key => $norm_label):
+                if (empty($cm_sum[$norm_key])) {
+                    continue;
+                }
+                $ns          = (array) $cm_sum[$norm_key];
+                $assessable  = isset($ns['assessable']) ? (array) $ns['assessable'] : array();
+                $covered     = isset($ns['covered']) ? (array) $ns['covered'] : array();
+                $total       = isset($ns['total_count']) ? (int) $ns['total_count'] : count($assessable);
+                $cov_count   = count($covered);
+                $pass_count  = isset($ns['pass_count']) ? (int) $ns['pass_count'] : max(0, $total - $cov_count);
+                ?>
+                <h3><?php echo esc_html($norm_label); ?></h3>
+                <p class="ns-desc"><?php echo esc_html(sprintf(
+                    /* translators: 1: number of controls without findings, 2: total assessable controls, 3: number of controls with findings. */
+                    __('%1$d of %2$d assessable controls have no findings; %3$d have at least one finding.', 'nubivio-healthcare-security-hardening'),
+                    $pass_count,
+                    $total,
+                    $cov_count
+                )); ?></p>
+                <table class="ns-evidence-table">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e('Control', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('Short title', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('Status', 'nubivio-healthcare-security-hardening'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($assessable as $ctrl_id => $ctrl_title):
+                        $ctrl_findings = isset($covered[$ctrl_id]) ? (array) $covered[$ctrl_id] : array();
+                        $has           = !empty($ctrl_findings);
+                        ?>
+                        <tr>
+                            <td><code><?php echo esc_html($ctrl_id); ?></code></td>
+                            <td><?php echo esc_html($ctrl_title); ?></td>
+                            <td>
+                                <?php if (!$has): ?>
+                                    <span class="ns-chip ns-chip-ok"><?php esc_html_e('no findings', 'nubivio-healthcare-security-hardening'); ?></span>
+                                <?php else: ?>
+                                    <span class="ns-chip ns-chip-medium"><?php echo esc_html(sprintf(
+                                        /* translators: %d: number of findings mapped to this control. */
+                                        _n('%d finding', '%d findings', count($ctrl_findings), 'nubivio-healthcare-security-hardening'),
+                                        count($ctrl_findings)
+                                    )); ?></span>
+                                    <details>
+                                        <summary><?php esc_html_e('show findings', 'nubivio-healthcare-security-hardening'); ?></summary>
+                                        <ul class="ns-finding-list">
+                                        <?php foreach ($ctrl_findings as $cf): ?>
+                                            <?php $sev = isset($cf['severity']) ? $cf['severity'] : 'low'; ?>
+                                            <li class="ns-finding ns-finding-<?php echo esc_attr($sev); ?>">
+                                                <span class="ns-chip ns-chip-<?php echo esc_attr($sev); ?>"><?php echo esc_html(strtoupper($sev)); ?></span>
+                                                <?php if (!empty($cf['module'])): ?><strong><?php echo esc_html($cf['module']); ?>:</strong> <?php endif; ?>
+                                                <?php echo esc_html(isset($cf['message']) ? $cf['message'] : ''); ?>
+                                            </li>
+                                        <?php endforeach; ?>
+                                        </ul>
+                                    </details>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
 <?php endif; ?>
 
 <div class="ns-card ns-docs">
