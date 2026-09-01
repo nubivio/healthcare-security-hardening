@@ -106,6 +106,23 @@ class Nubivio_HSH_Scanner {
             $results['access'] = $access;
         }
 
+        $docs = array('findings' => array(), 'counts' => array('high' => 0, 'medium' => 0, 'low' => 0), 'summary' => array());
+        if (class_exists('Nubivio_HSH_Docs')) {
+            $docs = (new Nubivio_HSH_Docs($this->core))->check_expires();
+            $results['docs'] = $docs;
+        }
+
+        $cookies = array('findings' => array(), 'counts' => array('high' => 0, 'medium' => 0, 'low' => 0), 'summary' => array());
+        if (class_exists('Nubivio_HSH_Cookies')) {
+            $cookies = (new Nubivio_HSH_Cookies($this->core))->run();
+            $results['cookies'] = $cookies;
+        }
+
+        // Compliance map runs last: it consumes the frameworks results assembled above.
+        if (class_exists('Nubivio_HSH_Compliance_Map')) {
+            $results['compliance_map'] = (new Nubivio_HSH_Compliance_Map($this->core))->run($results);
+        }
+
         // Health always runs, and picks up the two new rows from the modules above.
         $extra_rows = array();
         if (class_exists('Nubivio_HSH_Hsts') && !empty($hsts['summary'])) { $extra_rows[] = Nubivio_HSH_Hsts::health_row($hsts['summary']); }
@@ -121,7 +138,7 @@ class Nubivio_HSH_Scanner {
         $results['health'] = $health;
 
         $counts = array('high' => 0, 'medium' => 0, 'low' => 0);
-        foreach (array($cra, $gdpr, $nis2, $hsts, $dns, $results['csp'], $tls, $integrity, $access) as $set) {
+        foreach (array($cra, $gdpr, $nis2, $hsts, $dns, $results['csp'], $tls, $integrity, $access, $docs, $cookies) as $set) {
             foreach (array('high', 'medium', 'low') as $sev) {
                 if (isset($set['counts'][$sev])) {
                     $counts[$sev] += (int) $set['counts'][$sev];
@@ -130,7 +147,7 @@ class Nubivio_HSH_Scanner {
         }
 
         $score = class_exists('Nubivio_HSH_Score')
-            ? Nubivio_HSH_Score::compute($this->core, $cra, $gdpr, $nis2, $health, array($hsts, $dns, $tls, $integrity, $access))
+            ? Nubivio_HSH_Score::compute($this->core, $cra, $gdpr, $nis2, $health, array($hsts, $dns, $tls, $integrity, $access, $docs, $cookies))
             : array('score' => 0, 'band' => 'red', 'header_bonus' => 0, 'sectxt_bonus' => 0, 'breakdown' => array());
 
         return array(
