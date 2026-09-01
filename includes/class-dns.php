@@ -31,6 +31,9 @@ class Nubivio_HSH_Dns {
             'aaaa'    => array(),
             'ns'      => array(),
             'soa'     => array(),
+            'tls_rpt' => array(),
+            'bimi'    => array(),
+            'no_mail' => false,
         );
 
         if (!function_exists('dns_get_record')) {
@@ -53,11 +56,56 @@ class Nubivio_HSH_Dns {
                 $spf[] = $value;
             }
         }
-        $summary['spf'] = array('records' => $spf);
+        $spf_policy  = '';
+        $spf_lookups = 0;
+        if (count($spf) === 1) {
+            $spf_policy  = $this->spf_policy($spf[0]);
+            $spf_lookups = $this->spf_count_lookups($spf[0], $host);
+        }
+        $summary['spf'] = array(
+            'records' => $spf,
+            'policy'  => $spf_policy,
+            'lookups' => $spf_lookups,
+        );
         if (count($spf) === 0) {
             $this->add($findings, $counts, 'medium', __('No SPF record found. Suggested minimal record: `v=spf1 -all` (deny all outbound mail).', 'nubivio-healthcare-security-hardening'));
         } elseif (count($spf) > 1) {
             $this->add($findings, $counts, 'high', __('Multiple SPF records found. RFC 7208 requires exactly one; mail authentication will fail. Merge into a single record.', 'nubivio-healthcare-security-hardening'));
+        } else {
+            if ($spf_policy === 'softfail') {
+                $this->add(
+                    $findings,
+                    $counts,
+                    'low',
+                    __('SPF uses softfail (~all); consider tightening to -all once monitoring confirms no legitimate sender is missed.', 'nubivio-healthcare-security-hardening')
+                );
+            } elseif ($spf_policy === 'neutral') {
+                $this->add(
+                    $findings,
+                    $counts,
+                    'medium',
+                    __('SPF policy is neutral (?all); receivers will not treat unauthorised senders as spoofed. Move to ~all or -all.', 'nubivio-healthcare-security-hardening')
+                );
+            } elseif ($spf_policy === 'pass' || $spf_policy === 'none') {
+                $this->add(
+                    $findings,
+                    $counts,
+                    'high',
+                    __('SPF ends with +all or is missing an all-mechanism; the domain authorises every sender. Set -all after review.', 'nubivio-healthcare-security-hardening')
+                );
+            }
+            if ($spf_lookups > 10) {
+                $this->add(
+                    $findings,
+                    $counts,
+                    'high',
+                    sprintf(
+                        /* translators: %d: DNS lookup count. */
+                        __('SPF exceeds the RFC 7208 limit of 10 DNS lookups (counted %d); SPF will fail with permerror. Consolidate includes.', 'nubivio-healthcare-security-hardening'),
+                        $spf_lookups
+                    )
+                );
+            }
         }
 
         // DMARC.
@@ -94,17 +142,48 @@ class Nubivio_HSH_Dns {
                 $selectors[] = $s;
             }
         }
-        $matched = array();
+        $matched  = array();
+        $strength = array();
         foreach ($selectors as $selector) {
             $records = $this->dns($selector . '._domainkey.' . $host, DNS_TXT, 'dkim_' . $selector);
+            $value   = '';
             foreach ($records as $r) {
-                if ($this->txt($r) !== '') {
-                    $matched[] = $selector;
+                $txt = $this->txt($r);
+                if ($txt !== '') {
+                    $value = $txt;
                     break;
                 }
             }
+            if ($value === '') {
+                continue;
+            }
+            $matched[]         = $selector;
+            $detail            = $this->dkim_key_strength($value, $selector);
+            $strength[$selector] = $detail;
+            if ($detail['status'] === 'weak') {
+                $this->add(
+                    $findings,
+                    $counts,
+                    'high',
+                    sprintf(
+                        /* translators: 1: DKIM selector, 2: RSA key size in bits. */
+                        __('DKIM selector `%1$s` uses an RSA key of only %2$d bits; upgrade to at least 2048 bits.', 'nubivio-healthcare-security-hardening'),
+                        $selector,
+                        (int) $detail['bits']
+                    )
+                );
+            } elseif ($detail['status'] === 'parse_error') {
+                $findings[] = array(
+                    'severity' => 'warn',
+                    'message'  => sprintf(
+                        /* translators: %s: DKIM selector. */
+                        __('DKIM public key for selector `%s` could not be parsed; check the TXT record formatting.', 'nubivio-healthcare-security-hardening'),
+                        $selector
+                    ),
+                );
+            }
         }
-        $summary['dkim'] = array('matched' => $matched);
+        $summary['dkim'] = array('matched' => $matched, 'strength' => $strength);
         if (!$matched) {
             $this->add($findings, $counts, 'low', __('No DKIM record found for common selectors. Provide your DKIM selector in DNS health settings.', 'nubivio-healthcare-security-hardening'));
         }
@@ -198,6 +277,58 @@ class Nubivio_HSH_Dns {
             $this->add($findings, $counts, 'low', __('No AAAA record. Your site is not reachable over IPv6.', 'nubivio-healthcare-security-hardening'));
         }
 
+        // TLS-RPT.
+        $tls_rpt_txt = $this->dns('_smtp._tls.' . $host, DNS_TXT, 'tls_rpt');
+        $tls_rpt     = array();
+        foreach ($tls_rpt_txt as $r) {
+            $v = $this->txt($r);
+            if (stripos($v, 'v=TLSRPTv1') === 0) {
+                $tls_rpt[] = $v;
+            }
+        }
+        $summary['tls_rpt'] = array('records' => $tls_rpt);
+        $mta_sts_present    = !empty($mta_records) || $policy !== '';
+        if (!$tls_rpt && $mta_sts_present) {
+            $this->add(
+                $findings,
+                $counts,
+                'low',
+                __('MTA-STS is configured but TLS-RPT is missing; add a `_smtp._tls` TXT record to receive delivery-failure reports.', 'nubivio-healthcare-security-hardening')
+            );
+        }
+
+        // BIMI.
+        $bimi_txt = $this->dns('default._bimi.' . $host, DNS_TXT, 'bimi');
+        $bimi     = array();
+        foreach ($bimi_txt as $r) {
+            $v = $this->txt($r);
+            if (stripos($v, 'v=BIMI1') === 0) {
+                $bimi[] = $v;
+            }
+        }
+        $summary['bimi'] = array('records' => $bimi);
+        if ($bimi) {
+            $findings[] = array(
+                'severity' => 'info',
+                'message'  => __('BIMI record is published; supported mailbox providers can display your brand indicator.', 'nubivio-healthcare-security-hardening'),
+            );
+        }
+
+        // No-mail domain detection.
+        $mx_records = $this->dns($host, DNS_MX, 'mx');
+        if (
+            count($spf) === 1
+            && preg_match('/^\s*v=spf1\s+-all\s*$/i', $spf[0])
+            && !$mx_records
+            && !$dmarc
+        ) {
+            $summary['no_mail'] = true;
+            $findings[]         = array(
+                'severity' => 'info',
+                'message'  => __('Domain appears not to send mail; SPF -all with no MX records is the recommended configuration.', 'nubivio-healthcare-security-hardening'),
+            );
+        }
+
         // NS redundancy.
         $ns_records  = $this->dns($host, DNS_NS, 'ns');
         $ns_targets  = array();
@@ -252,6 +383,194 @@ class Nubivio_HSH_Dns {
     }
 
     /**
+     * Grade the final SPF mechanism to a policy string.
+     *
+     * @param string $record Full SPF record value.
+     * @return string One of pass, softfail, neutral, none.
+     */
+    private function spf_policy($record) {
+        $normal = trim((string) $record);
+        if (preg_match('/(^|\s)([-~?+]?)all\s*$/i', $normal, $m)) {
+            $qualifier = $m[2] !== '' ? $m[2] : '+';
+            switch ($qualifier) {
+                case '-':
+                    return 'pass';
+                case '~':
+                    return 'softfail';
+                case '?':
+                    return 'neutral';
+                case '+':
+                default:
+                    return 'pass';
+            }
+        }
+        return 'none';
+    }
+
+    /**
+     * Count SPF DNS lookups per RFC 7208 section 4.6.4.
+     *
+     * Traverses `include`, `redirect`, `a`, `mx`, `exists` and `ptr` mechanisms.
+     * Recursion depth is capped at 2 and the total number of lookups at 20 to
+     * bound run-time and prevent malicious records from stalling the scan.
+     *
+     * @param string $record SPF record value.
+     * @param string $host   Domain the record was fetched from.
+     * @return int Total lookups counted.
+     */
+    private function spf_count_lookups($record, $host) {
+        $total = 0;
+        $this->spf_walk($record, $host, 0, $total);
+        return $total;
+    }
+
+    /**
+     * Recursive helper that accumulates SPF DNS lookups.
+     *
+     * @param string $record Current SPF record value.
+     * @param string $host   Domain the record belongs to.
+     * @param int    $depth  Recursion depth (0 for the root record).
+     * @param int    $total  Running total, updated by reference.
+     */
+    private function spf_walk($record, $host, $depth, &$total) {
+        if ($depth > 2 || $total > 20) {
+            return;
+        }
+        $terms = preg_split('/\s+/', trim((string) $record));
+        if (!is_array($terms)) {
+            return;
+        }
+        foreach ($terms as $term) {
+            if ($total > 20) {
+                return;
+            }
+            $term = ltrim($term, '+-~?');
+            $low  = strtolower($term);
+            if ($low === 'a' || strpos($low, 'a:') === 0 || strpos($low, 'a/') === 0) {
+                $total++;
+            } elseif ($low === 'mx' || strpos($low, 'mx:') === 0 || strpos($low, 'mx/') === 0) {
+                $total++;
+            } elseif (strpos($low, 'exists:') === 0) {
+                $total++;
+            } elseif ($low === 'ptr' || strpos($low, 'ptr:') === 0) {
+                $total++;
+            } elseif (strpos($low, 'include:') === 0) {
+                $total++;
+                $target = substr($term, 8);
+                if ($target !== '' && $total <= 20) {
+                    $this->spf_walk_target($target, $depth + 1, $total);
+                }
+            } elseif (strpos($low, 'redirect=') === 0) {
+                $total++;
+                $target = substr($term, 9);
+                if ($target !== '' && $total <= 20) {
+                    $this->spf_walk_target($target, $depth + 1, $total);
+                }
+            }
+        }
+        unset($host);
+    }
+
+    /**
+     * Fetch and walk the SPF record for an included or redirected target.
+     *
+     * @param string $target Domain to resolve.
+     * @param int    $depth  Depth counter passed to spf_walk().
+     * @param int    $total  Running total, updated by reference.
+     */
+    private function spf_walk_target($target, $depth, &$total) {
+        $key    = 'spf_lookups_' . sanitize_key($target);
+        $txt    = $this->dns($target, DNS_TXT, $key);
+        $record = '';
+        foreach ($txt as $r) {
+            $value = $this->txt($r);
+            if (stripos($value, 'v=spf1') === 0) {
+                $record = $value;
+                break;
+            }
+        }
+        if ($record !== '') {
+            $this->spf_walk($record, $target, $depth, $total);
+        }
+    }
+
+    /**
+     * Determine the strength of a DKIM public key.
+     *
+     * Parses the `p=` tag out of a DKIM TXT record, decodes the base64 payload
+     * and asks OpenSSL for the key type and bit length. Returns a status of
+     * `strong`, `weak`, `parse_error` or `unsupported` together with the raw
+     * details reported by OpenSSL.
+     *
+     * @param string $record   DKIM TXT record value.
+     * @param string $selector Selector name, used only for the transient key.
+     * @return array{status:string,bits:int,type:string}
+     */
+    private function dkim_key_strength($record, $selector) {
+        $out = array('status' => 'unknown', 'bits' => 0, 'type' => '');
+        $key = 'nubivio_hsh_dns_' . md5($this->host() . '|dkim_strength_' . $selector);
+        $cached = get_transient($key);
+        if (is_array($cached)) {
+            return $cached;
+        }
+        if (!function_exists('openssl_pkey_get_public') || !function_exists('openssl_pkey_get_details')) {
+            $out['status'] = 'unsupported';
+            set_transient($key, $out, 6 * HOUR_IN_SECONDS);
+            return $out;
+        }
+        $tags  = array();
+        $parts = preg_split('/;\s*/', (string) $record);
+        foreach ($parts as $part) {
+            $pos = strpos($part, '=');
+            if ($pos === false) {
+                continue;
+            }
+            $name  = strtolower(trim(substr($part, 0, $pos)));
+            $value = trim(substr($part, $pos + 1));
+            $tags[$name] = $value;
+        }
+        $key_type = isset($tags['k']) ? strtolower($tags['k']) : 'rsa';
+        $p        = isset($tags['p']) ? $tags['p'] : '';
+        if ($p === '') {
+            $out['status'] = 'parse_error';
+            set_transient($key, $out, HOUR_IN_SECONDS);
+            return $out;
+        }
+        $p_clean = preg_replace('/\s+/', '', $p);
+        $pem     = "-----BEGIN PUBLIC KEY-----\n" . chunk_split((string) $p_clean, 64) . "-----END PUBLIC KEY-----\n";
+        $res     = @openssl_pkey_get_public($pem);
+        if (!$res) {
+            $out['status'] = 'parse_error';
+            set_transient($key, $out, HOUR_IN_SECONDS);
+            return $out;
+        }
+        $details = @openssl_pkey_get_details($res);
+        if (function_exists('openssl_free_key')) {
+            @openssl_free_key($res);
+        }
+        if (!is_array($details)) {
+            $out['status'] = 'parse_error';
+            set_transient($key, $out, HOUR_IN_SECONDS);
+            return $out;
+        }
+        $bits = isset($details['bits']) ? (int) $details['bits'] : 0;
+        $type = isset($details['type']) ? (int) $details['type'] : -1;
+        $out['bits'] = $bits;
+        if (defined('OPENSSL_KEYTYPE_RSA') && $type === OPENSSL_KEYTYPE_RSA) {
+            $out['type']   = 'rsa';
+            $out['status'] = $bits >= 2048 ? 'strong' : 'weak';
+        } elseif ($key_type === 'ed25519') {
+            $out['type']   = 'ed25519';
+            $out['status'] = 'strong';
+        } else {
+            $out['type']   = $key_type !== '' ? $key_type : 'unknown';
+            $out['status'] = $bits >= 2048 ? 'strong' : 'weak';
+        }
+        set_transient($key, $out, 6 * HOUR_IN_SECONDS);
+        return $out;
+    }
+
+    /**
      * Estimate the age of an SOA serial number in seconds.
      *
      * Serials that follow the YYYYMMDDNN convention decode into a timestamp;
@@ -296,7 +615,21 @@ class Nubivio_HSH_Dns {
     }
 
     public static function clear_cache($host) {
-        $checks    = array('spf', 'dmarc', 'caa', 'mta_sts_txt', 'mta_sts_http', 'dnssec', 'doh', 'aaaa', 'ns', 'soa');
+        $checks    = array(
+            'spf',
+            'dmarc',
+            'caa',
+            'mta_sts_txt',
+            'mta_sts_http',
+            'dnssec',
+            'doh',
+            'aaaa',
+            'ns',
+            'soa',
+            'tls_rpt',
+            'bimi',
+            'mx',
+        );
         $selectors = array('default', 'google', 'k1', 's1', 's2', 'selector1', 'selector2', 'mail');
         $options   = get_option('nubivio_hsh_options', array());
         $custom    = isset($options['dns_dkim_selectors']) ? (string) $options['dns_dkim_selectors'] : '';
@@ -308,7 +641,10 @@ class Nubivio_HSH_Dns {
         }
         foreach ($selectors as $selector) {
             $checks[] = 'dkim_' . $selector;
+            $checks[] = 'dkim_strength_' . $selector;
+            $checks[] = 'spf_lookups_' . $selector;
         }
+        $checks[] = 'spf_lookups';
         foreach ($checks as $check) {
             delete_transient('nubivio_hsh_dns_' . md5($host . '|' . $check));
         }
