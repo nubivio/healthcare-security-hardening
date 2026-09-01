@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Nubivio Healthcare Security Hardening 2.4.0\n"
+"Project-Id-Version: Nubivio Healthcare Security Hardening 2.5.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nubivio-healthcare-security-hardening\n"
 "POT-Creation-Date: 2026-08-19 12:42+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
@@ -1825,4 +1825,201 @@ msgstr ""
 
 #: admin/dashboard.php:324 admin/dashboard.php:470 admin/dashboard.php:476
 msgid "yes"
+msgstr ""
+
+# v2.5.0 additions (manually appended; regenerate with `wp i18n make-pot` when available).
+
+#: includes/class-cookies.php
+msgid "Cookies and trackers"
+msgstr ""
+
+#: includes/class-cookies.php
+msgid "Trackers were loaded but no consent-plugin is active. This is almost certainly a GDPR violation."
+msgstr ""
+
+#: includes/class-cookies.php
+msgid "This analysis reads what the server sends. Cookies set later by JavaScript are not visible here."
+msgstr ""
+
+#: includes/class-cookies.php
+msgid "Attribute or consent issues detected on the home response."
+msgstr ""
+
+#: includes/class-cookies.php
+msgid "No pre-consent cookie or tracker issues detected."
+msgstr ""
+
+#. translators: %s: tracker host.
+#: includes/class-cookies.php
+msgid "Tracker detected before a consent mechanism: %s. Verify this script only loads after explicit opt-in (GDPR art. 6, ePrivacy)."
+msgstr ""
+
+#. translators: %s: cookie name.
+#: includes/class-cookies.php
+msgid "Cookie %s is missing the Secure attribute on an HTTPS site; it can be intercepted on an unencrypted connection."
+msgstr ""
+
+#. translators: %s: cookie name.
+#: includes/class-cookies.php
+msgid "Authentication cookie %s is missing the HttpOnly attribute."
+msgstr ""
+
+#. translators: %s: cookie name.
+#: includes/class-cookies.php
+msgid "Cookie %s has no SameSite attribute; behaviour is browser-dependent."
+msgstr ""
+
+#. translators: %s: cookie name.
+#: includes/class-cookies.php
+msgid "Cookie %s uses SameSite=None without Secure; modern browsers reject it."
+msgstr ""
+
+#. translators: %s: cookie name.
+#: includes/class-cookies.php
+msgid "Cookie %s has a lifetime longer than one year."
+msgstr ""
+
+#. translators: 1: cookie name, 2: cookie domain.
+#: includes/class-cookies.php
+msgid "Cookie %1$s is scoped to the third-party domain %2$s."
+msgstr ""
+
+#: includes/class-compliance-map.php
+msgid "Indicative mapping based on technical signals."
+msgstr ""
+
+#: includes/class-compliance-map.php
+msgid "Not evidence of compliance and not a substitute for an audit by a certified party."
+msgstr ""
+
+#: includes/class-compliance-map.php
+msgid "NEN 7510 and ISO 27001 controls are only referenced by ID and short label; normative text is copyrighted and is not included."
+msgstr ""
+
+#: includes/class-health.php
+msgid "CSP effectiveness"
+msgstr ""
+
+#: includes/class-health.php
+msgid "CSP grade unavailable; run a scan first."
+msgstr ""
+
+#. translators: %s: CSP grade letter A to F.
+#: includes/class-health.php
+msgid "CSP policy graded %s."
+msgstr ""
+
+#: includes/class-health.php
+msgid "Cookies module not loaded."
+msgstr ""
+
+#: admin/dashboard.php
+msgid "Cookies and trackers (pre-consent)"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "This analysis reads what the server sends to an anonymous visitor. Cookies set later by JavaScript are not visible here."
+msgstr ""
+
+#: admin/dashboard.php
+msgid "No Set-Cookie headers on the home response."
+msgstr ""
+
+#: admin/dashboard.php
+msgid "Cookie"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "Domain"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "unset"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "Trackers detected before consent"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "No known tracker hosts detected in the home response."
+msgstr ""
+
+#: admin/dashboard.php
+msgid "Consent-management plugin"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "none detected"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "Expires countdown"
+msgstr ""
+
+#. translators: %d: days remaining until security.txt expires.
+#: admin/dashboard.php
+msgid "%d day left"
+msgid_plural "%d days left"
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/dashboard.php
+msgid "expired"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "Published copy drift"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "drift detected"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "in sync"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "Standards mapping"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "NEN 7510-2:2024"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "ISO 27001:2022 Annex A"
+msgstr ""
+
+#. translators: 1: number of controls without findings, 2: total assessable controls, 3: number of controls with findings.
+#: admin/dashboard.php
+msgid "%1$d of %2$d assessable controls have no findings; %3$d have at least one finding."
+msgstr ""
+
+#: admin/dashboard.php
+msgid "Control"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "Short title"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "Status"
+msgstr ""
+
+#: admin/dashboard.php
+msgid "no findings"
+msgstr ""
+
+#. translators: %d: number of findings mapped to this control.
+#: admin/dashboard.php
+msgid "%d finding"
+msgid_plural "%d findings"
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/dashboard.php
+msgid "show findings"
 msgstr ""

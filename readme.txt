@@ -4,7 +4,7 @@ Tags: security, security-txt, nis2, hsts, headers
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.4.0
+Stable tag: 2.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -148,6 +148,16 @@ When CSP report-only is enabled, browsers may POST reports to the local endpoint
 
 == Changelog ==
 
+= 2.5.0 =
+* Compliance mapping to NEN 7510-2:2024 and ISO 27001:2022 Annex A control level.
+* Pre-consent cookie and tracker analysis with consent-plugin detection.
+* SPF policy grading, RFC 7208 lookup-limit counting, DKIM key strength, TLS-RPT, BIMI, no-mail detection.
+* DNS NS redundancy and SOA freshness checks.
+* CSP policy effectiveness grading (A-F) on the plugin's own generated policy.
+* CSP enforce switch with 14-day inventory preflight and fail-safe fallback to report-only.
+* security.txt Expires countdown and drift detection.
+* Reformatted v2.4.0 modules to WordPress Coding Standards (no behavior change).
+
 = 2.4.0 =
 * Additional optional hardening headers: COOP, COEP credentialless, CORP and extended Permissions-Policy
 * HSTS preload readiness check and Compliance card
@@ -209,6 +219,9 @@ When CSP report-only is enabled, browsers may POST reports to the local endpoint
 * Gravity Forms email-domain blocking, shown only when Gravity Forms is active
 
 == Upgrade Notice ==
+
+= 2.5.0 =
+Adds compliance mapping to NEN 7510-2:2024 and ISO 27001:2022 controls, pre-consent cookie and tracker analysis, deeper email checks (SPF grading, RFC 7208 lookups, DKIM key strength, TLS-RPT, BIMI), DNS NS and SOA checks, CSP grading and an opt-in enforce switch with preflight, and security.txt Expires plus drift detection. All new checks are read-only; existing hardening is unchanged.
 
 = 2.4.0 =
 Adds optional advanced hardening headers, HSTS preload readiness, DNS and TLS overview cards, and CSP report-only monitoring. Existing hardening remains unchanged; CSP report-only is off until you enable it.
