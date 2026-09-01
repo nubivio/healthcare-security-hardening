@@ -29,6 +29,8 @@ class Nubivio_HSH_Dns {
             'mta_sts' => array(),
             'dnssec'  => array(),
             'aaaa'    => array(),
+            'ns'      => array(),
+            'soa'     => array(),
         );
 
         if (!function_exists('dns_get_record')) {
@@ -196,7 +198,88 @@ class Nubivio_HSH_Dns {
             $this->add($findings, $counts, 'low', __('No AAAA record. Your site is not reachable over IPv6.', 'nubivio-healthcare-security-hardening'));
         }
 
+        // NS redundancy.
+        $ns_records  = $this->dns($host, DNS_NS, 'ns');
+        $ns_targets  = array();
+        foreach ($ns_records as $r) {
+            if (isset($r['target']) && $r['target'] !== '') {
+                $ns_targets[] = strtolower((string) $r['target']);
+            }
+        }
+        $ns_targets      = array_values(array_unique($ns_targets));
+        $summary['ns']   = array('records' => $ns_targets);
+        if (count($ns_targets) < 2) {
+            $this->add(
+                $findings,
+                $counts,
+                'medium',
+                __('Fewer than two nameservers detected; single point of failure for DNS resolution.', 'nubivio-healthcare-security-hardening')
+            );
+        }
+
+        // SOA.
+        $soa_type    = defined('DNS_SOA') ? DNS_SOA : DNS_ANY;
+        $soa_records = $this->dns($host, $soa_type, 'soa');
+        $soa_entry   = null;
+        foreach ($soa_records as $r) {
+            if (isset($r['type']) && $r['type'] === 'SOA') {
+                $soa_entry = $r;
+                break;
+            }
+        }
+        $summary['soa'] = array('record' => $soa_entry);
+        if (!$soa_entry) {
+            $this->add(
+                $findings,
+                $counts,
+                'medium',
+                __('No SOA record found for the zone; DNS delegation may be misconfigured.', 'nubivio-healthcare-security-hardening')
+            );
+        } else {
+            $serial = isset($soa_entry['serial']) ? (int) $soa_entry['serial'] : 0;
+            $age    = $this->soa_serial_age($serial);
+            if ($age !== null && $age < 3 * DAY_IN_SECONDS) {
+                $this->add(
+                    $findings,
+                    $counts,
+                    'low',
+                    __('SOA serial changed within the last 3 days; the zone may be unstable or actively edited.', 'nubivio-healthcare-security-hardening')
+                );
+            }
+        }
+
         return array('findings' => $findings, 'counts' => $counts, 'summary' => $summary);
+    }
+
+    /**
+     * Estimate the age of an SOA serial number in seconds.
+     *
+     * Serials that follow the YYYYMMDDNN convention decode into a timestamp;
+     * anything else returns null so the caller can skip the freshness check.
+     *
+     * @param int $serial Raw SOA serial number.
+     * @return int|null Age in seconds, or null when the serial is not a date.
+     */
+    private function soa_serial_age($serial) {
+        if ($serial < 1000000000) {
+            return null;
+        }
+        $text = (string) $serial;
+        if (strlen($text) < 8) {
+            return null;
+        }
+        $year  = (int) substr($text, 0, 4);
+        $month = (int) substr($text, 4, 2);
+        $day   = (int) substr($text, 6, 2);
+        if ($year < 1990 || $year > 2100 || $month < 1 || $month > 12 || $day < 1 || $day > 31) {
+            return null;
+        }
+        $ts = gmmktime(0, 0, 0, $month, $day, $year);
+        if (!is_int($ts) || $ts <= 0) {
+            return null;
+        }
+        $age = time() - $ts;
+        return $age >= 0 ? $age : null;
     }
 
     public static function health_row($summary) {
@@ -213,7 +296,7 @@ class Nubivio_HSH_Dns {
     }
 
     public static function clear_cache($host) {
-        $checks    = array('spf', 'dmarc', 'caa', 'mta_sts_txt', 'mta_sts_http', 'dnssec', 'doh', 'aaaa');
+        $checks    = array('spf', 'dmarc', 'caa', 'mta_sts_txt', 'mta_sts_http', 'dnssec', 'doh', 'aaaa', 'ns', 'soa');
         $selectors = array('default', 'google', 'k1', 's1', 's2', 'selector1', 'selector2', 'mail');
         $options   = get_option('nubivio_hsh_options', array());
         $custom    = isset($options['dns_dkim_selectors']) ? (string) $options['dns_dkim_selectors'] : '';
