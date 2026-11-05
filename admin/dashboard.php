@@ -60,6 +60,87 @@ $header_clauses = array(
     </form>
 </div>
 
+<?php
+// v2.6.0 PHP runtime: read live from the running PHP process, no scan or network needed.
+if (class_exists('Nubivio_HSH_Php_Runtime')):
+    $php_rt      = (new Nubivio_HSH_Php_Runtime($core))->run();
+    $php_sum     = $php_rt['summary'];
+    $php_chips   = array(
+        'patched'  => array('ok', __('patched', 'nubivio-healthcare-security-hardening')),
+        'unknown'  => array('medium', __('check with host', 'nubivio-healthcare-security-hardening')),
+        'affected' => array('high', __('vulnerable', 'nubivio-healthcare-security-hardening')),
+    );
+    $php_extra   = array();
+    foreach ($php_rt['findings'] as $php_f) {
+        if (empty($php_f['advisory'])) {
+            $php_extra[] = $php_f;
+        }
+    }
+    $php_ini     = function ($value) {
+        if ($value === null) {
+            return __('not available', 'nubivio-healthcare-security-hardening');
+        }
+        return $value ? __('on', 'nubivio-healthcare-security-hardening') : __('off', 'nubivio-healthcare-security-hardening');
+    };
+    ?>
+    <div class="ns-card ns-php-runtime">
+        <h2><?php esc_html_e('PHP runtime', 'nubivio-healthcare-security-hardening'); ?></h2>
+        <p class="ns-card-intro"><?php echo esc_html(Nubivio_HSH_Php_Runtime::process_note()); ?></p>
+        <table class="ns-evidence-table"><tbody>
+            <tr>
+                <td><?php esc_html_e('PHP version', 'nubivio-healthcare-security-hardening'); ?></td>
+                <td><code><?php echo esc_html($php_sum['version']); ?></code></td>
+            </tr>
+            <tr>
+                <td><?php esc_html_e('Server API (SAPI)', 'nubivio-healthcare-security-hardening'); ?></td>
+                <td><code><?php echo esc_html($php_sum['sapi']); ?></code></td>
+            </tr>
+            <?php foreach ($php_sum['advisories'] as $php_adv):
+                $php_chip = isset($php_chips[$php_adv['status']]) ? $php_chips[$php_adv['status']] : $php_chips['unknown'];
+                ?>
+                <tr>
+                    <td>
+                        <?php if ($php_adv['url'] !== ''): ?>
+                            <a href="<?php echo esc_url($php_adv['url']); ?>" target="_blank" rel="noopener"><?php
+                                echo esc_html($php_adv['name']);
+                            ?></a>
+                        <?php else: ?>
+                            <?php echo esc_html($php_adv['name']); ?>
+                        <?php endif; ?>
+                        <br><small><?php echo esc_html(implode(', ', $php_adv['cves'])); ?></small>
+                    </td>
+                    <td>
+                        <span class="ns-chip ns-chip-<?php echo esc_attr($php_chip[0]); ?>"><?php echo esc_html($php_chip[1]); ?></span>
+                        <?php echo esc_html($php_adv['message']); ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            <tr>
+                <td><code>session.upload_progress.enabled</code></td>
+                <td><?php echo esc_html($php_ini($php_sum['upload_progress'])); ?></td>
+            </tr>
+            <?php if ($php_sum['fatal_error_backtraces'] !== null): ?>
+                <tr>
+                    <td><code>fatal_error_backtraces</code></td>
+                    <td><?php echo esc_html($php_ini($php_sum['fatal_error_backtraces'])); ?></td>
+                </tr>
+            <?php endif; ?>
+        </tbody></table>
+        <?php if ($php_extra): ?>
+            <ul class="ns-finding-list">
+                <?php foreach ($php_extra as $php_f): ?>
+                    <li class="ns-finding ns-finding-<?php echo esc_attr($php_f['severity']); ?>">
+                        <span class="ns-chip ns-chip-<?php echo esc_attr($php_f['severity']); ?>"><?php
+                            echo esc_html(strtoupper($php_f['severity']));
+                        ?></span>
+                        <?php echo esc_html($php_f['message']); ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
+
 <?php if (!$scan): ?>
     <div class="ns-card">
         <p><?php esc_html_e('No scan has run yet. Run a compliance scan to see your score, findings and evidence.', 'nubivio-healthcare-security-hardening'); ?></p>
@@ -128,7 +209,6 @@ $header_clauses = array(
         'gdpr' => __('GDPR', 'nubivio-healthcare-security-hardening'),
         'nis2' => __('NIS2 Art. 21', 'nubivio-healthcare-security-hardening'),
         // v2.6.0 modules.
-        'php_runtime' => __('PHP runtime vulnerabilities', 'nubivio-healthcare-security-hardening'),
         'exposure'    => __('Exposure scan', 'nubivio-healthcare-security-hardening'),
         'redirects'   => __('Redirect chain security headers', 'nubivio-healthcare-security-hardening'),
     );
