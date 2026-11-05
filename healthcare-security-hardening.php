@@ -108,6 +108,7 @@ final class Nubivio_HSH {
             'class-tls.php',
             'class-cookies.php',
             'class-php-runtime.php',
+            'class-exposure.php',
             'class-compliance-map.php',
             'class-score.php',
             'class-scanner.php',

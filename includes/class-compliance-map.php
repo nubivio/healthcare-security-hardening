@@ -40,6 +40,7 @@ class Nubivio_HSH_Compliance_Map {
                 'A.8.5'  => __('Secure authentication (login exposure and password quality)', 'nubivio-healthcare-security-hardening'),
                 'A.8.8'  => __('Management of technical vulnerabilities (plugin, core and PHP runtime currency)', 'nubivio-healthcare-security-hardening'),
                 'A.8.9'  => __('Configuration management (security headers and hardening)', 'nubivio-healthcare-security-hardening'),
+                'A.8.12' => __('Data leakage prevention (exposed files, listings and user enumeration)', 'nubivio-healthcare-security-hardening'),
                 'A.8.20' => __('Network security (DNS resilience and NS redundancy)', 'nubivio-healthcare-security-hardening'),
                 'A.8.21' => __('Security of network services (TLS, HSTS, SPF, DKIM, DMARC)', 'nubivio-healthcare-security-hardening'),
                 'A.8.24' => __('Use of cryptography (TLS, HSTS, DKIM key strength, CAA)', 'nubivio-healthcare-security-hardening'),
@@ -52,6 +53,7 @@ class Nubivio_HSH_Compliance_Map {
                 'A.8.5'  => __('Secure authentication for healthcare users', 'nubivio-healthcare-security-hardening'),
                 'A.8.8'  => __('Vulnerability management for medical WordPress sites', 'nubivio-healthcare-security-hardening'),
                 'A.8.9'  => __('Configuration management (headers, hardening, disclosure)', 'nubivio-healthcare-security-hardening'),
+                'A.8.12' => __('Preventing leakage of patient data (exposed files and listings)', 'nubivio-healthcare-security-hardening'),
                 'A.8.20' => __('Network security for care communication (DNS resilience)', 'nubivio-healthcare-security-hardening'),
                 'A.8.21' => __('Security of network services used in care (TLS, email)', 'nubivio-healthcare-security-hardening'),
                 'A.8.24' => __('Cryptography protecting health data in transit', 'nubivio-healthcare-security-hardening'),
@@ -86,6 +88,10 @@ class Nubivio_HSH_Compliance_Map {
                         continue;
                     }
                     $ids = $this->classify((string) $module, $msg);
+                    // v2.6.0: modules may name their controls explicitly; this survives translation.
+                    if (!empty($finding['controls']) && is_array($finding['controls'])) {
+                        $ids = array_values(array_unique(array_merge($ids, array_map('strval', $finding['controls']))));
+                    }
                     foreach ($ids as $id) {
                         if (!isset($controls[$id])) {
                             continue;
