@@ -1002,7 +1002,7 @@ if (class_exists('Nubivio_HSH_Php_Runtime')):
             </p>
             <p class="ns-desc"><?php
                 esc_html_e(
-                    'This policy reports without blocking. When you see no new relevant violations for 2 weeks, you are ready to enforce (coming in v2.5.0).',
+                    'This policy reports without blocking. When you see no new relevant violations for 2 weeks, you are ready to enforce with the Enforce CSP switch.',
                     'nubivio-healthcare-security-hardening'
                 );
             ?></p>
