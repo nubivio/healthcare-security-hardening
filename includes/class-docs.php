@@ -404,6 +404,7 @@ class Nubivio_HSH_Docs {
             'exposure'    => __('Exposure scan', 'nubivio-healthcare-security-hardening'),
             'redirects'   => __('Redirect chain security headers', 'nubivio-healthcare-security-hardening'),
             'rdap'        => __('Domain registration (RDAP)', 'nubivio-healthcare-security-hardening'),
+            'ct'          => __('Certificate Transparency (crt.sh)', 'nubivio-healthcare-security-hardening'),
         );
         foreach ($names as $key => $label) {
             if (empty($scan['frameworks'][$key]['findings'])) {

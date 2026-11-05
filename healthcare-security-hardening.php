@@ -86,6 +86,10 @@ final class Nubivio_HSH {
         if (class_exists('Nubivio_HSH_Php_Runtime')) {
             Nubivio_HSH_Php_Runtime::register_hooks($this);
         }
+        // v2.6.0 CT: "mark current issuers as known" action.
+        if (class_exists('Nubivio_HSH_Ct')) {
+            Nubivio_HSH_Ct::register_hooks($this);
+        }
     }
 
     /**
@@ -111,6 +115,7 @@ final class Nubivio_HSH {
             'class-exposure.php',
             'class-redirects.php',
             'class-rdap.php',
+            'class-ct.php',
             'class-compliance-map.php',
             'class-score.php',
             'class-scanner.php',
@@ -258,6 +263,9 @@ final class Nubivio_HSH {
 
             // External sources, opt-in, default off (v2.6.0).
             'rdap_enabled' => 0,
+            'ct_enabled' => 0,
+            'ct_known_issuers' => array(),
+            'ct_baseline_at' => 0,
             'csp_seen_hosts' => array(),
             'csp_inventory_at' => 0,
             'csp_inline_scripts' => 0,
@@ -755,7 +763,7 @@ final class Nubivio_HSH {
             'hsts_enabled','hsts_subdomains','hsts_preload',
             'csp_enabled','csp_report_only','referrer_enabled','nosniff_enabled',
             'xfo_enabled','permissions_enabled','strip_legacy',
-            'coop_enabled','coep_enabled','corp_enabled','permissions_policy_enabled','dns_use_doh','rdap_enabled',
+            'coop_enabled','coep_enabled','corp_enabled','permissions_policy_enabled','dns_use_doh','rdap_enabled','ct_enabled',
             'sectxt_enabled','sectxt_love','gf_block_enabled',
         ) as $key) {
             $clean[$key] = empty($in[$key]) ? 0 : 1;
@@ -796,6 +804,11 @@ final class Nubivio_HSH {
         $clean['csp_inline_scripts'] = isset($current['csp_inline_scripts']) ? (int) $current['csp_inline_scripts'] : 0;
         $clean['csp_violations'] = isset($current['csp_violations']) && is_array($current['csp_violations']) ? $current['csp_violations'] : array();
         $clean['csp_enforce_enabled'] = !empty($current['csp_enforce_enabled']) ? 1 : 0;
+        // CT issuer baseline (v2.6.0): written by the first CT run or the mark-known action only.
+        $clean['ct_known_issuers'] = isset($current['ct_known_issuers']) && is_array($current['ct_known_issuers'])
+            ? $current['ct_known_issuers']
+            : array();
+        $clean['ct_baseline_at'] = isset($current['ct_baseline_at']) ? (int) $current['ct_baseline_at'] : 0;
 
         update_option(self::OPTION, wp_parse_args($clean, $d));
 
@@ -1464,6 +1477,20 @@ final class Nubivio_HSH {
                                 'nubivio-healthcare-security-hardening'
                             ) . ' ' . esc_html__(
                                 'Shows registrar, expiry date, transfer lock and DNSSEC delegation.',
+                                'nubivio-healthcare-security-hardening'
+                            )
+                        );
+                    ?></div>
+                    <div class="ns-field ns-field-flat"><?php
+                        $this->cb(
+                            'ct_enabled',
+                            __('Certificate Transparency check via crt.sh', 'nubivio-healthcare-security-hardening'),
+                            $o,
+                            esc_html__(
+                                'Sends your domain name to crt.sh (operated by Sectigo) to list the certificates issued for it.',
+                                'nubivio-healthcare-security-hardening'
+                            ) . ' ' . esc_html__(
+                                'Warns about certificates from unknown issuers or issuers outside your CAA record.',
                                 'nubivio-healthcare-security-hardening'
                             )
                         );

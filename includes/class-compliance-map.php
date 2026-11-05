@@ -43,7 +43,7 @@ class Nubivio_HSH_Compliance_Map {
                 'A.8.12' => __('Data leakage prevention (exposed files, listings and user enumeration)', 'nubivio-healthcare-security-hardening'),
                 'A.8.20' => __('Network security (DNS resilience and NS redundancy)', 'nubivio-healthcare-security-hardening'),
                 'A.8.21' => __('Security of network services (TLS, HSTS, SPF, DKIM, DMARC)', 'nubivio-healthcare-security-hardening'),
-                'A.8.24' => __('Use of cryptography (TLS, HSTS, DKIM key strength, CAA)', 'nubivio-healthcare-security-hardening'),
+                'A.8.24' => __('Use of cryptography (TLS, HSTS, DKIM key strength, CAA, certificate issuers)', 'nubivio-healthcare-security-hardening'),
                 'A.8.26' => __('Application security requirements (CSP and response headers)', 'nubivio-healthcare-security-hardening'),
             ),
             'nen7510' => array(

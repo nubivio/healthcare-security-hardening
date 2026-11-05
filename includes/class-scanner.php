@@ -144,6 +144,14 @@ class Nubivio_HSH_Scanner {
             $results['rdap'] = $rdap;
         }
 
+        // v2.6.0 Certificate Transparency (opt-in): no request when ct_enabled is off.
+        $ct = array('findings' => array(), 'counts' => array('high' => 0, 'medium' => 0, 'low' => 0), 'summary' => array());
+        if (class_exists('Nubivio_HSH_Ct')) {
+            $caa_records   = isset($dns['summary']['caa']['records']) ? (array) $dns['summary']['caa']['records'] : array();
+            $ct            = (new Nubivio_HSH_Ct($this->core))->run($caa_records);
+            $results['ct'] = $ct;
+        }
+
         // Compliance map runs last: it consumes the frameworks results assembled above.
         if (class_exists('Nubivio_HSH_Compliance_Map')) {
             $results['compliance_map'] = (new Nubivio_HSH_Compliance_Map($this->core))->run($results);
@@ -178,6 +186,12 @@ class Nubivio_HSH_Scanner {
                 $extra_rows[] = $rdap_row;
             }
         }
+        if (class_exists('Nubivio_HSH_Ct')) {
+            $ct_row = Nubivio_HSH_Ct::health_row($ct);
+            if ($ct_row) {
+                $extra_rows[] = $ct_row;
+            }
+        }
         if (isset($results['csp']['summary']) && is_array($results['csp']['summary'])) {
             $extra_rows[] = Nubivio_HSH_Health::csp_grade_row($results['csp']['summary']);
         }
@@ -185,7 +199,9 @@ class Nubivio_HSH_Scanner {
         $results['health'] = $health;
 
         $counts = array('high' => 0, 'medium' => 0, 'low' => 0);
-        foreach (array($cra, $gdpr, $nis2, $hsts, $dns, $results['csp'], $tls, $integrity, $access, $docs, $cookies, $php_runtime, $exposure, $redirects, $rdap) as $set) {
+        $sets = array($cra, $gdpr, $nis2, $hsts, $dns, $results['csp'], $tls, $integrity, $access, $docs, $cookies);
+        $sets = array_merge($sets, array($php_runtime, $exposure, $redirects, $rdap, $ct));
+        foreach ($sets as $set) {
             foreach (array('high', 'medium', 'low') as $sev) {
                 if (isset($set['counts'][$sev])) {
                     $counts[$sev] += (int) $set['counts'][$sev];
@@ -194,7 +210,14 @@ class Nubivio_HSH_Scanner {
         }
 
         $score = class_exists('Nubivio_HSH_Score')
-            ? Nubivio_HSH_Score::compute($this->core, $cra, $gdpr, $nis2, $health, array($hsts, $dns, $tls, $integrity, $access, $docs, $cookies, $php_runtime, $exposure, $redirects, $rdap))
+            ? Nubivio_HSH_Score::compute(
+                $this->core,
+                $cra,
+                $gdpr,
+                $nis2,
+                $health,
+                array($hsts, $dns, $tls, $integrity, $access, $docs, $cookies, $php_runtime, $exposure, $redirects, $rdap, $ct)
+            )
             : array('score' => 0, 'band' => 'red', 'header_bonus' => 0, 'sectxt_bonus' => 0, 'breakdown' => array());
 
         return array(

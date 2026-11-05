@@ -476,6 +476,91 @@ if (class_exists('Nubivio_HSH_Php_Runtime')):
     <?php endif; ?>
 
     <?php
+    // v2.6.0 Certificate Transparency via crt.sh (opt-in).
+    if (!empty($scan['frameworks']['ct']['summary']['enabled'])):
+        $ct_r   = $scan['frameworks']['ct'];
+        $ct_s   = $ct_r['summary'];
+        $ct_fmt = get_option('date_format');
+        ?>
+        <div class="ns-card ns-ct">
+            <h2><?php esc_html_e('Certificate Transparency (crt.sh)', 'nubivio-healthcare-security-hardening'); ?></h2>
+            <?php if (empty($ct_s['available'])): ?>
+                <p class="ns-card-intro"><?php
+                    esc_html_e('CT source temporarily not available; the scan continued without it.', 'nubivio-healthcare-security-hardening');
+                ?></p>
+            <?php else: ?>
+                <p class="ns-card-intro"><?php
+                    echo esc_html(sprintf(
+                        /* translators: 1: domain, 2: number of certificates, 3: number of subdomain names. */
+                        __('%1$s: %2$d unexpired certificates in the CT logs, %3$d subdomain names seen.', 'nubivio-healthcare-security-hardening'),
+                        $ct_s['domain'],
+                        (int) $ct_s['entries'],
+                        count((array) $ct_s['subdomains'])
+                    ));
+                    if (!empty($ct_s['baseline_at'])) {
+                        echo ' ';
+                        echo esc_html(sprintf(
+                            /* translators: %s: date. */
+                            __('Known issuers recorded on %s.', 'nubivio-healthcare-security-hardening'),
+                            date_i18n($ct_fmt, (int) $ct_s['baseline_at'])
+                        ));
+                    }
+                ?></p>
+                <?php if (!empty($ct_s['issuers'])): ?>
+                    <table class="ns-evidence-table">
+                        <thead><tr>
+                            <th><?php esc_html_e('Issuer', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('Certificates', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('Latest issued', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('Known', 'nubivio-healthcare-security-hardening'); ?></th>
+                        </tr></thead>
+                        <tbody>
+                        <?php foreach ($ct_s['issuers'] as $ct_name => $ct_info): ?>
+                            <tr>
+                                <td><?php echo esc_html($ct_name); ?></td>
+                                <td><?php echo (int) $ct_info['count']; ?></td>
+                                <td><?php echo $ct_info['latest'] ? esc_html(date_i18n($ct_fmt, (int) $ct_info['latest'])) : '-'; ?></td>
+                                <td><?php
+                                if (in_array($ct_name, (array) $ct_s['known'], true)) {
+                                    echo '<span class="ns-chip ns-chip-ok">' . esc_html__('known', 'nubivio-healthcare-security-hardening') . '</span>';
+                                } else {
+                                    echo '<span class="ns-chip ns-chip-medium">' . esc_html__('new', 'nubivio-healthcare-security-hardening') . '</span>';
+                                }
+                                ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                        <input type="hidden" name="action" value="<?php echo esc_attr(Nubivio_HSH_Ct::MARK_ACTION); ?>">
+                        <?php wp_nonce_field(Nubivio_HSH_Ct::MARK_ACTION); ?>
+                        <button type="submit" class="ns-btn ns-btn-ghost"><?php
+                            esc_html_e('Mark current issuers as known', 'nubivio-healthcare-security-hardening');
+                        ?></button>
+                    </form>
+                <?php endif; ?>
+                <?php if (!empty($ct_s['truncated'])): ?>
+                    <p class="ns-desc"><?php
+                        esc_html_e('The CT answer was larger than the limit; only the first entries were read.', 'nubivio-healthcare-security-hardening');
+                    ?></p>
+                <?php endif; ?>
+                <?php if (!empty($ct_r['findings'])): ?>
+                    <ul class="ns-finding-list">
+                        <?php foreach ($ct_r['findings'] as $ct_f): ?>
+                            <li class="ns-finding ns-finding-<?php echo esc_attr($ct_f['severity']); ?>">
+                                <span class="ns-chip ns-chip-<?php echo esc_attr($ct_f['severity']); ?>"><?php
+                                    echo esc_html(strtoupper($ct_f['severity']));
+                                ?></span>
+                                <?php echo esc_html($ct_f['message']); ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
+    <?php
     // WordPress core integrity (v2.3.0).
     if (!empty($scan['frameworks']['integrity'])):
         $integrity = $scan['frameworks']['integrity'];
