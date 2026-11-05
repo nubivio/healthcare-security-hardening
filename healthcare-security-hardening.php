@@ -101,6 +101,8 @@ final class Nubivio_HSH {
             'class-dns.php',
             'class-csp.php',
             'class-tls.php',
+            'class-cookies.php',
+            'class-compliance-map.php',
             'class-score.php',
             'class-scanner.php',
             'class-docs.php',
@@ -153,19 +155,55 @@ final class Nubivio_HSH {
     public static function uninstall() {
         delete_option(self::OPTION);
         delete_option(self::SCAN_OPTION);
-        delete_transient('nubivio_hsh_sectxt_checked');
-        delete_transient('nubivio_hsh_headers_probe');
-        delete_transient('nubivio_hsh_frontend_scripts');
-        delete_transient('nubivio_hsh_scan_running');
-        delete_transient('nubivio_hsh_scan_cooldown');
-        // Clear any per-plugin WP.org metadata caches created by the CRA scan.
+        foreach (array(
+            'nubivio_hsh_sectxt_checked',
+            'nubivio_hsh_headers_probe',
+            'nubivio_hsh_frontend_scripts',
+            'nubivio_hsh_scan_running',
+            'nubivio_hsh_scan_cooldown',
+            'nubivio_hsh_core_latest',
+            'nubivio_hsh_csp_last_error',
+            'nubivio_hsh_docs_sectxt_drift',
+        ) as $transient) {
+            delete_transient($transient);
+        }
+        self::delete_prefixed_data();
         if (function_exists('wp_cache_flush')) {
-            // Transients with a dynamic slug suffix are removed on natural expiry (12h).
             wp_cache_flush();
         }
         wp_clear_scheduled_hook(self::CRON_HOOK);
         self::instance()->delete_security_txt_file();
         self::instance()->delete_pgp_key_file();
+    }
+
+    /**
+     * Remove every plugin-owned transient (fixed and hashed keys such as
+     * nubivio_hsh_dns_*, nubivio_hsh_tls_*, nubivio_hsh_wporg_*) and the
+     * plugin's per-user meta (notice dismissals). Only rows with the
+     * nubivio_hsh_ prefix are touched.
+     */
+    private static function delete_prefixed_data() {
+        global $wpdb;
+        if (!isset($wpdb) || !is_object($wpdb) || !method_exists($wpdb, 'esc_like')) {
+            return;
+        }
+        $patterns = array(
+            $wpdb->esc_like('_transient_nubivio_hsh_') . '%',
+            $wpdb->esc_like('_transient_timeout_nubivio_hsh_') . '%',
+            $wpdb->esc_like('_site_transient_nubivio_hsh_') . '%',
+            $wpdb->esc_like('_site_transient_timeout_nubivio_hsh_') . '%',
+        );
+        foreach ($patterns as $pattern) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $pattern));
+        }
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->usermeta} WHERE meta_key LIKE %s",
+                $wpdb->esc_like('nubivio_hsh_') . '%'
+            )
+        );
     }
 
     /* Options */

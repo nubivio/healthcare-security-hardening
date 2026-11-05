@@ -60,7 +60,14 @@ class Nubivio_HSH_Docs {
             }
         }
 
-        if (method_exists($this->core, 'build_security_txt') && method_exists($this->core, 'canonical_url')) {
+        /**
+         * Filter: set to false to skip the loopback request that compares the
+         * published security.txt with the current settings (drift check).
+         *
+         * @param bool $enabled Default true.
+         */
+        $drift_check = (bool) apply_filters('nubivio_hsh_sectxt_drift_check', true);
+        if ($drift_check && method_exists($this->core, 'build_security_txt') && method_exists($this->core, 'canonical_url')) {
             $key      = 'nubivio_hsh_docs_sectxt_drift';
             $cached   = get_transient($key);
             $expected = (string) $this->core->build_security_txt();

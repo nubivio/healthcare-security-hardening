@@ -207,6 +207,10 @@ class Nubivio_HSH_Csp {
      * in the last 7 days. Returns the outcome plus a reason string suitable
      * for display in the admin UI.
      *
+     * Both windows are filterable:
+     * - `nubivio_hsh_csp_enforce_min_inventory_days` (default 14)
+     * - `nubivio_hsh_csp_enforce_quiet_days` (default 7)
+     *
      * @return array{ok:bool,reason:string}
      */
     public function can_enforce() {
@@ -226,22 +230,33 @@ class Nubivio_HSH_Csp {
             );
         }
 
+        $min_days   = max(0, (int) apply_filters('nubivio_hsh_csp_enforce_min_inventory_days', 14));
+        $quiet_days = max(0, (int) apply_filters('nubivio_hsh_csp_enforce_quiet_days', 7));
+
         $inventory_at = isset($o['csp_inventory_at']) ? (int) $o['csp_inventory_at'] : 0;
-        if ($inventory_at === 0 || (time() - $inventory_at) < 14 * DAY_IN_SECONDS) {
+        if ($inventory_at === 0 || (time() - $inventory_at) < $min_days * DAY_IN_SECONDS) {
             return array(
                 'ok'     => false,
-                'reason' => __('Report-only observation must run for at least 14 days before enforcement is safe.', 'nubivio-healthcare-security-hardening'),
+                'reason' => sprintf(
+                    /* translators: %d: minimum number of days of report-only observation. */
+                    __('Report-only observation must run for at least %d days before enforcement is safe.', 'nubivio-healthcare-security-hardening'),
+                    $min_days
+                ),
             );
         }
 
-        $threshold  = time() - 7 * DAY_IN_SECONDS;
+        $threshold  = time() - $quiet_days * DAY_IN_SECONDS;
         $violations = isset($o['csp_violations']) ? (array) $o['csp_violations'] : array();
         foreach ($violations as $item) {
             $last = isset($item['last_seen']) ? (int) $item['last_seen'] : 0;
             if ($last >= $threshold) {
                 return array(
                     'ok'     => false,
-                    'reason' => __('Violations were reported within the last 7 days; resolve or allowlist them before enforcement.', 'nubivio-healthcare-security-hardening'),
+                    'reason' => sprintf(
+                        /* translators: %d: number of days without new violations required before enforcement. */
+                        __('Violations were reported within the last %d days; resolve or allowlist them before enforcement.', 'nubivio-healthcare-security-hardening'),
+                        $quiet_days
+                    ),
                 );
             }
         }
