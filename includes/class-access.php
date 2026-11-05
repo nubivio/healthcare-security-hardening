@@ -56,10 +56,11 @@ class Nubivio_HSH_Access {
             'baseline_state'  => 'ok',
             'needs_approval'  => false,
             'users_truncated' => $users['truncated'],
+            'recent_admins'   => array(),
         );
 
         $this->check_admin_baseline($users['admins'], $app_pws, $baseline, $findings, $counts, $report);
-        $this->check_recent_admins($users['admins'], $baseline, $findings, $counts);
+        $this->check_recent_admins($users['admins'], $baseline, $findings, $counts, $report);
         $this->check_roles($findings, $counts);
         $this->check_elevated_users($users['elevated'], $findings, $counts);
         $this->check_app_passwords($app_pws, $baseline, $findings, $counts, $report);
@@ -206,7 +207,7 @@ class Nubivio_HSH_Access {
     }
 
     /** 3B. Administrators created in the last 30 days. */
-    private function check_recent_admins($admins, $baseline, &$findings, &$counts) {
+    private function check_recent_admins($admins, $baseline, &$findings, &$counts, &$report) {
         $cutoff      = time() - (30 * DAY_IN_SECONDS);
         $baseline_at = isset($baseline['set_at']) ? (int) $baseline['set_at'] : 0;
         $known       = array();
@@ -235,6 +236,8 @@ class Nubivio_HSH_Access {
                 date_i18n(get_option('date_format'), $registered)
             ));
             $counts['medium']++;
+            // Machine-readable signal for the v2.6.0 risk scenarios.
+            $report['recent_admins'][] = (string) $row['login'];
         }
     }
 

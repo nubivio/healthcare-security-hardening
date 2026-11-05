@@ -116,6 +116,7 @@ final class Nubivio_HSH {
             'class-redirects.php',
             'class-rdap.php',
             'class-ct.php',
+            'class-scenarios.php',
             'class-compliance-map.php',
             'class-score.php',
             'class-scanner.php',

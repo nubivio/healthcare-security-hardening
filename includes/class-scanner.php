@@ -152,6 +152,11 @@ class Nubivio_HSH_Scanner {
             $results['ct'] = $ct;
         }
 
+        // v2.6.0 risk scenarios: reads the results above, adds no findings, not part of counts or score.
+        if (class_exists('Nubivio_HSH_Scenarios')) {
+            $results['scenarios'] = (new Nubivio_HSH_Scenarios($this->core))->run($results);
+        }
+
         // Compliance map runs last: it consumes the frameworks results assembled above.
         if (class_exists('Nubivio_HSH_Compliance_Map')) {
             $results['compliance_map'] = (new Nubivio_HSH_Compliance_Map($this->core))->run($results);

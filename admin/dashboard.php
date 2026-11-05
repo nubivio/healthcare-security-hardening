@@ -61,6 +61,44 @@ $header_clauses = array(
 </div>
 
 <?php
+// v2.6.0 risk scenarios: combined signals from the last scan, shown first.
+if (!empty($scan['frameworks']['scenarios']['summary'])):
+    $scn_sum  = $scan['frameworks']['scenarios']['summary'];
+    $scn_list = isset($scn_sum['scenarios']) ? (array) $scn_sum['scenarios'] : array();
+    ?>
+    <div class="ns-card ns-scenarios">
+        <h2><?php esc_html_e('Risk scenarios', 'nubivio-healthcare-security-hardening'); ?></h2>
+        <p class="ns-card-intro"><strong><?php echo esc_html(Nubivio_HSH_Scenarios::caveat()); ?></strong></p>
+        <?php if (!$scn_list): ?>
+            <p class="ns-desc"><?php
+                esc_html_e(
+                    'No combination of signals from the last scan matches a known attack scenario.',
+                    'nubivio-healthcare-security-hardening'
+                );
+            ?></p>
+        <?php endif; ?>
+        <?php foreach ($scn_list as $scn): ?>
+            <div class="ns-scenario ns-finding-<?php echo esc_attr($scn['severity']); ?>">
+                <h3>
+                    <span class="ns-chip ns-chip-<?php echo esc_attr($scn['severity']); ?>"><?php
+                        echo esc_html(strtoupper($scn['severity']));
+                    ?></span>
+                    <?php echo esc_html($scn['title']); ?>
+                </h3>
+                <p class="ns-desc"><?php esc_html_e('Signals found:', 'nubivio-healthcare-security-hardening'); ?></p>
+                <ul class="ns-finding-list">
+                    <?php foreach ((array) $scn['signals'] as $scn_sig): ?>
+                        <li><?php echo esc_html($scn_sig); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+                <p><strong><?php esc_html_e('First step:', 'nubivio-healthcare-security-hardening'); ?></strong>
+                    <?php echo esc_html($scn['first_step']); ?></p>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
+<?php
 // v2.6.0 PHP runtime: read live from the running PHP process, no scan or network needed.
 if (class_exists('Nubivio_HSH_Php_Runtime')):
     $php_rt      = (new Nubivio_HSH_Php_Runtime($core))->run();

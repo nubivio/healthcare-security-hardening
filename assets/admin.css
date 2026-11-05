@@ -118,3 +118,11 @@
 #nubivio-hsh .ns-copy:hover{background:var(--info-bg);}
 #nubivio-hsh .ns-evidence-table form{margin:0;}
 #nubivio-hsh .ns-evidence-table .ns-btn{padding:6px 10px;font-size:11px;white-space:nowrap;}
+/* v2.6.0 risk scenarios */
+#nubivio-hsh .ns-scenario{border-left:4px solid #e0e2e6;padding:8px 0 8px 14px;margin:14px 0;}
+#nubivio-hsh .ns-scenario.ns-finding-high{border-left-color:#b3261e;}
+#nubivio-hsh .ns-scenario.ns-finding-medium{border-left-color:#9a6a16;}
+#nubivio-hsh .ns-scenario h3{margin:0 0 6px;font-size:14px;}
+#nubivio-hsh .ns-scenario h3 .ns-chip{margin-right:8px;}
+#nubivio-hsh .ns-scenario .ns-finding-list{list-style:disc;padding-left:20px;margin:4px 0 8px;}
+#nubivio-hsh .ns-scenario .ns-finding-list li{font-size:13px;line-height:1.5;color:#4A4D55;}
