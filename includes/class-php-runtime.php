@@ -6,9 +6,10 @@
  * response headers) with a small, data-driven table of PHP-level
  * advisories. The first entry is PHP2Shell: CVE-2026-109618 (RCE via
  * out-of-memory corruption during request cleanup) and CVE-2026-109619 (RCE
- * via stale request-owned global state), CVSS 9.2, actively exploited.
+ * via stale request-owned global state), CVSS 9.2.
  * Fixed upstream on 21 October 2026 in PHP 8.2.35, 8.3.36, 8.4.27 and
- * 8.5.12. PHP 8.1 and older get no upstream fix.
+ * 8.5.12. PHP 8.1 and older are unsupported: there is no official PHP
+ * release with the fix, only source backports and distribution packages.
  *
  * Sources:
  * - https://github.com/php/php-src/security/advisories/GHSA-w8hw-w9fx-j79w
@@ -60,8 +61,8 @@ class Nubivio_HSH_Php_Runtime {
 
     /**
      * PHP-level advisories. `fixed` maps a branch to the first fixed release
-     * number on that branch. Branches older than `min_supported_branch` get
-     * no upstream fix. A next PHP advisory is one more entry here.
+     * number on that branch. Branches older than `min_supported_branch` have
+     * no official PHP release with the fix. A next PHP advisory is one more entry here.
      *
      * @return array<int,array<string,mixed>>
      */
@@ -346,7 +347,7 @@ class Nubivio_HSH_Php_Runtime {
             $parts = array(
                 sprintf(
                     /* translators: 1: PHP version, 2: advisory name with CVE IDs. */
-                    __('PHP %1$s is vulnerable to %2$s and this PHP branch does not receive an upstream fix.', 'nubivio-healthcare-security-hardening'),
+                    __('PHP %1$s is unsupported and no official PHP release fixes %2$s. Treat it as vulnerable unless your host applied a backport.', 'nubivio-healthcare-security-hardening'),
                     $version,
                     $label
                 ),

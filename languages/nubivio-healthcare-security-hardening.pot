@@ -3,13 +3,13 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Nubivio Healthcare Security Hardening 2.6.0\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nubivio-healthcare-security-hardening\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/repo\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-05T22:26:23+00:00\n"
+"POT-Creation-Date: 2026-11-05T22:28:44+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: nubivio-healthcare-security-hardening\n"
@@ -1034,13 +1034,13 @@ msgstr ""
 
 #: healthcare-security-hardening.php:958
 #: includes/class-ct.php:411
-#: includes/class-php-runtime.php:543
+#: includes/class-php-runtime.php:544
 msgid "You are not allowed to perform this action."
 msgstr ""
 
 #: healthcare-security-hardening.php:962
 #: includes/class-ct.php:415
-#: includes/class-php-runtime.php:548
+#: includes/class-php-runtime.php:549
 msgid "Security check failed."
 msgstr ""
 
@@ -2596,109 +2596,109 @@ msgstr ""
 msgid "No %s detected (NIS2 Art. 21)."
 msgstr ""
 
-#: includes/class-php-runtime.php:258
+#: includes/class-php-runtime.php:259
 msgid "Set session.upload_progress.enabled=0 via php.ini or your host, as PHP advises (this also covers CVE-2026-115560)."
 msgstr ""
 
-#: includes/class-php-runtime.php:261
+#: includes/class-php-runtime.php:262
 msgid "This is a temporary measure and does not replace the update."
 msgstr ""
 
-#: includes/class-php-runtime.php:269
+#: includes/class-php-runtime.php:270
 msgid "fatal_error_backtraces is on (PHP 8.5). PHP advises setting fatal_error_backtraces=0 via php.ini or your host."
 msgstr ""
 
 #. translators: 1: PHP version, 2: advisory name with CVE IDs.
-#: includes/class-php-runtime.php:309
+#: includes/class-php-runtime.php:310
 #, php-format
 msgid "PHP %1$s includes the fix for %2$s."
 msgstr ""
 
-#: includes/class-php-runtime.php:313
+#: includes/class-php-runtime.php:314
 msgid "After a PHP update, old PHP workers must have been restarted. With multiple servers, every server counts separately."
 msgstr ""
 
 #. translators: 1: PHP version, 2: advisory name with CVE IDs.
-#: includes/class-php-runtime.php:325
+#: includes/class-php-runtime.php:326
 #, php-format
 msgid "PHP %1$s could not be matched to the fixed releases for %2$s. Ask your host to confirm the fix is installed."
 msgstr ""
 
 #. translators: 1: PHP version string with distribution suffix, 2: advisory name with CVE IDs.
-#: includes/class-php-runtime.php:333
+#: includes/class-php-runtime.php:334
 #, php-format
 msgid "PHP %1$s is a distribution build, which may include a backported fix for %2$s."
 msgstr ""
 
-#: includes/class-php-runtime.php:337
+#: includes/class-php-runtime.php:338
 msgid "Ask your host to compare the package version with the security advisory of the distribution."
 msgstr ""
 
 #. translators: 1: PHP version, 2: advisory name with CVE IDs.
-#: includes/class-php-runtime.php:349
+#: includes/class-php-runtime.php:350
 #, php-format
-msgid "PHP %1$s is vulnerable to %2$s and this PHP branch does not receive an upstream fix."
+msgid "PHP %1$s is unsupported and no official PHP release fixes %2$s. Treat it as vulnerable unless your host applied a backport."
 msgstr ""
 
 #. translators: %s: PHP branch, e.g. 8.3.
-#: includes/class-php-runtime.php:355
+#: includes/class-php-runtime.php:356
 #, php-format
 msgid "An upgrade to PHP %s or later is required; ask your hosting provider."
 msgstr ""
 
 #. translators: 1: PHP version, 2: advisory name with CVE IDs, 3: first fixed PHP version on this branch.
-#: includes/class-php-runtime.php:363
+#: includes/class-php-runtime.php:364
 #, php-format
 msgid "PHP %1$s is vulnerable to %2$s. Ask your hosting provider to update PHP to %3$s or later."
 msgstr ""
 
-#: includes/class-php-runtime.php:371
+#: includes/class-php-runtime.php:372
 msgid "This site runs on Apache mod_php, which carries the highest risk."
 msgstr ""
 
-#: includes/class-php-runtime.php:398
+#: includes/class-php-runtime.php:399
 msgid "session.upload_progress.enabled is on."
 msgstr ""
 
-#: includes/class-php-runtime.php:401
+#: includes/class-php-runtime.php:402
 msgid "PHP runtime (PHP2Shell)"
 msgstr ""
 
-#: includes/class-php-runtime.php:418
+#: includes/class-php-runtime.php:419
 msgid "PHP runtime vulnerabilities (PHP2Shell)"
 msgstr ""
 
-#: includes/class-php-runtime.php:438
+#: includes/class-php-runtime.php:439
 msgid "Your PHP version includes the PHP2Shell fix"
 msgstr ""
 
-#: includes/class-php-runtime.php:439
+#: includes/class-php-runtime.php:440
 msgid "Check your PHP version for PHP2Shell with your host"
 msgstr ""
 
-#: includes/class-php-runtime.php:440
+#: includes/class-php-runtime.php:441
 msgid "Your PHP version is vulnerable to PHP2Shell"
 msgstr ""
 
-#: includes/class-php-runtime.php:460
+#: includes/class-php-runtime.php:461
 msgid "Security"
 msgstr ""
 
-#: includes/class-php-runtime.php:465
+#: includes/class-php-runtime.php:466
 msgid "NCSC-NL information about PHP2Shell"
 msgstr ""
 
-#: includes/class-php-runtime.php:476
+#: includes/class-php-runtime.php:477
 msgid "This is the version of the PHP process that actually serves your site, not a guess from response headers. A plugin cannot fix PHP; only your hosting provider can update it."
 msgstr ""
 
 #. translators: %s: advisory name, e.g. PHP2Shell.
-#: includes/class-php-runtime.php:508
+#: includes/class-php-runtime.php:509
 #, php-format
 msgid "Nubivio Healthcare Security Hardening: your PHP version is vulnerable to %s"
 msgstr ""
 
-#: includes/class-php-runtime.php:514
+#: includes/class-php-runtime.php:515
 msgid "Hide for this PHP version"
 msgstr ""
 

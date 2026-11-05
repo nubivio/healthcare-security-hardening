@@ -21,7 +21,7 @@ The defaults are safe to ship on a live site, and the plugin is built to move yo
 PHP2Shell is the name for two critical PHP vulnerabilities, CVE-2026-109618 and CVE-2026-109619 (CVSS 9.2), that allow remote code execution without logging in. The plugin checks the version of the PHP process that actually serves your site, not a guess from response headers.
 
 * PHP 8.2.35, 8.3.36, 8.4.27 and 8.5.12 (21 October 2026) contain the fix. Older versions in those branches are reported as vulnerable.
-* PHP 8.1 and older are no longer supported by the PHP project. The plugin reports them as vulnerable and advises an upgrade.
+* PHP 8.1 and older are no longer supported by the PHP project and have no official release with the fix. The plugin reports them as vulnerable unless the host confirms a backport, and advises an upgrade.
 * Distribution builds (for example Ubuntu or Debian) may carry a backported fix under an older version number. The plugin then reports "verify with host" and asks you to compare the package version with the distribution advisory, instead of calling the site vulnerable.
 * It also checks `session.upload_progress.enabled`. If it is on, the plugin advises setting it to 0, as PHP recommends. That is a temporary measure and does not replace the update.
 * The result appears on the Compliance tab and in WordPress Site Health (Tools, Site Health).
