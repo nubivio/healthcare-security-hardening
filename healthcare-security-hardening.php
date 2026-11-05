@@ -81,6 +81,11 @@ final class Nubivio_HSH {
         add_action(self::CRON_HOOK, array($this, 'write_security_txt_file'));
         add_action(self::CRON_HOOK, array($this, 'run_scheduled_scan'));
         add_action(self::CRON_HOOK, array($this, 'run_csp_inventory_scan'));
+
+        // v2.6.0 PHP runtime check: Site Health test, admin notice, dismiss handler.
+        if (class_exists('Nubivio_HSH_Php_Runtime')) {
+            Nubivio_HSH_Php_Runtime::register_hooks($this);
+        }
     }
 
     /**
@@ -102,6 +107,7 @@ final class Nubivio_HSH {
             'class-csp.php',
             'class-tls.php',
             'class-cookies.php',
+            'class-php-runtime.php',
             'class-compliance-map.php',
             'class-score.php',
             'class-scanner.php',
