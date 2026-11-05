@@ -130,6 +130,12 @@ class Nubivio_HSH_Scanner {
             $results['exposure'] = $exposure;
         }
 
+        $redirects = array('findings' => array(), 'counts' => array('high' => 0, 'medium' => 0, 'low' => 0), 'summary' => array());
+        if (class_exists('Nubivio_HSH_Redirects')) {
+            $redirects = (new Nubivio_HSH_Redirects($this->core))->run();
+            $results['redirects'] = $redirects;
+        }
+
         // Compliance map runs last: it consumes the frameworks results assembled above.
         if (class_exists('Nubivio_HSH_Compliance_Map')) {
             $results['compliance_map'] = (new Nubivio_HSH_Compliance_Map($this->core))->run($results);
@@ -155,6 +161,9 @@ class Nubivio_HSH_Scanner {
         if (class_exists('Nubivio_HSH_Exposure') && !empty($exposure['summary'])) {
             $extra_rows[] = Nubivio_HSH_Exposure::health_row($exposure);
         }
+        if (class_exists('Nubivio_HSH_Redirects') && !empty($redirects['summary'])) {
+            $extra_rows[] = Nubivio_HSH_Redirects::health_row($redirects);
+        }
         if (isset($results['csp']['summary']) && is_array($results['csp']['summary'])) {
             $extra_rows[] = Nubivio_HSH_Health::csp_grade_row($results['csp']['summary']);
         }
@@ -162,7 +171,7 @@ class Nubivio_HSH_Scanner {
         $results['health'] = $health;
 
         $counts = array('high' => 0, 'medium' => 0, 'low' => 0);
-        foreach (array($cra, $gdpr, $nis2, $hsts, $dns, $results['csp'], $tls, $integrity, $access, $docs, $cookies, $php_runtime, $exposure) as $set) {
+        foreach (array($cra, $gdpr, $nis2, $hsts, $dns, $results['csp'], $tls, $integrity, $access, $docs, $cookies, $php_runtime, $exposure, $redirects) as $set) {
             foreach (array('high', 'medium', 'low') as $sev) {
                 if (isset($set['counts'][$sev])) {
                     $counts[$sev] += (int) $set['counts'][$sev];
@@ -171,7 +180,7 @@ class Nubivio_HSH_Scanner {
         }
 
         $score = class_exists('Nubivio_HSH_Score')
-            ? Nubivio_HSH_Score::compute($this->core, $cra, $gdpr, $nis2, $health, array($hsts, $dns, $tls, $integrity, $access, $docs, $cookies, $php_runtime, $exposure))
+            ? Nubivio_HSH_Score::compute($this->core, $cra, $gdpr, $nis2, $health, array($hsts, $dns, $tls, $integrity, $access, $docs, $cookies, $php_runtime, $exposure, $redirects))
             : array('score' => 0, 'band' => 'red', 'header_bonus' => 0, 'sectxt_bonus' => 0, 'breakdown' => array());
 
         return array(

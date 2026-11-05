@@ -399,6 +399,10 @@ class Nubivio_HSH_Docs {
             'cra'  => __('CRA (plugin readiness)', 'nubivio-healthcare-security-hardening'),
             'gdpr' => __('GDPR', 'nubivio-healthcare-security-hardening'),
             'nis2' => __('NIS2 Art. 21', 'nubivio-healthcare-security-hardening'),
+            // v2.6.0 modules.
+            'php_runtime' => __('PHP runtime vulnerabilities', 'nubivio-healthcare-security-hardening'),
+            'exposure'    => __('Exposure scan', 'nubivio-healthcare-security-hardening'),
+            'redirects'   => __('Redirect chain security headers', 'nubivio-healthcare-security-hardening'),
         );
         foreach ($names as $key => $label) {
             if (empty($scan['frameworks'][$key]['findings'])) {
