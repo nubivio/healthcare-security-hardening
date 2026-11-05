@@ -209,7 +209,6 @@ if (class_exists('Nubivio_HSH_Php_Runtime')):
         'gdpr' => __('GDPR', 'nubivio-healthcare-security-hardening'),
         'nis2' => __('NIS2 Art. 21', 'nubivio-healthcare-security-hardening'),
         // v2.6.0 modules.
-        'exposure'    => __('Exposure scan', 'nubivio-healthcare-security-hardening'),
         'redirects'   => __('Redirect chain security headers', 'nubivio-healthcare-security-hardening'),
     );
     foreach ($fw_labels as $key => $label):
@@ -237,6 +236,85 @@ if (class_exists('Nubivio_HSH_Php_Runtime')):
             <?php endif; ?>
         </div>
     <?php endforeach; ?>
+
+    <?php
+    // v2.6.0 exposure scan of the site itself.
+    if (!empty($scan['frameworks']['exposure']['summary']['checks'])):
+        $exp       = $scan['frameworks']['exposure'];
+        $exp_sum   = $exp['summary'];
+        $exp_yes   = '<span class="ns-chip ns-chip-%1$s">%2$s</span>';
+        ?>
+        <div class="ns-card ns-exposure">
+            <h2><?php esc_html_e('Exposure scan', 'nubivio-healthcare-security-hardening'); ?></h2>
+            <p class="ns-card-intro"><?php
+                esc_html_e(
+                    'Requests to your own site only, as an outsider would make them. Bodies are not stored; only path, status and the yes/no result.',
+                    'nubivio-healthcare-security-hardening'
+                );
+                if (!empty($exp_sum['time'])) {
+                    echo ' ';
+                    echo esc_html(sprintf(
+                        /* translators: %s: human readable time difference, e.g. 2 hours. */
+                        __('Checked %s ago; results are kept for 12 hours.', 'nubivio-healthcare-security-hardening'),
+                        human_time_diff((int) $exp_sum['time'], time())
+                    ));
+                }
+            ?></p>
+            <table class="ns-evidence-table">
+                <thead><tr>
+                    <th><?php esc_html_e('Check', 'nubivio-healthcare-security-hardening'); ?></th>
+                    <th><?php esc_html_e('Path', 'nubivio-healthcare-security-hardening'); ?></th>
+                    <th><?php esc_html_e('HTTP status', 'nubivio-healthcare-security-hardening'); ?></th>
+                    <th><?php esc_html_e('Result', 'nubivio-healthcare-security-hardening'); ?></th>
+                </tr></thead>
+                <tbody>
+                <?php if ($exp_sum['generator'] !== null): ?>
+                    <tr>
+                        <td><?php esc_html_e('Generator meta tag', 'nubivio-healthcare-security-hardening'); ?></td>
+                        <td><code>/</code></td>
+                        <td>&nbsp;</td>
+                        <td><?php
+                        // phpcs:ignore WordPress.Security.EscapeOutput -- format string is static, parts are escaped.
+                        echo $exp_sum['generator']
+                            ? sprintf($exp_yes, 'low', esc_html__('exposed', 'nubivio-healthcare-security-hardening'))
+                            : sprintf($exp_yes, 'ok', esc_html__('not exposed', 'nubivio-healthcare-security-hardening'));
+                        ?></td>
+                    </tr>
+                <?php endif; ?>
+                <?php foreach ($exp_sum['checks'] as $exp_row): ?>
+                    <tr>
+                        <td><?php echo esc_html(Nubivio_HSH_Exposure::label($exp_row['id'])); ?></td>
+                        <td><code><?php echo esc_html($exp_row['path']); ?></code></td>
+                        <td><?php echo $exp_row['status'] ? (int) $exp_row['status'] : '&nbsp;'; ?></td>
+                        <td><?php
+                        // phpcs:disable WordPress.Security.EscapeOutput -- format string is static, parts are escaped.
+                        if (!empty($exp_row['hit'])) {
+                            echo sprintf($exp_yes, esc_attr($exp_row['severity']), esc_html__('exposed', 'nubivio-healthcare-security-hardening'));
+                        } elseif ((int) $exp_row['status'] === 0) {
+                            echo sprintf($exp_yes, 'low', esc_html__('not checked', 'nubivio-healthcare-security-hardening'));
+                        } else {
+                            echo sprintf($exp_yes, 'ok', esc_html__('not exposed', 'nubivio-healthcare-security-hardening'));
+                        }
+                        // phpcs:enable WordPress.Security.EscapeOutput
+                        ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php if (!empty($exp['findings'])): ?>
+                <ul class="ns-finding-list">
+                    <?php foreach ($exp['findings'] as $exp_f): ?>
+                        <li class="ns-finding ns-finding-<?php echo esc_attr($exp_f['severity']); ?>">
+                            <span class="ns-chip ns-chip-<?php echo esc_attr($exp_f['severity']); ?>"><?php
+                                echo esc_html(strtoupper($exp_f['severity']));
+                            ?></span>
+                            <?php echo esc_html($exp_f['message']); ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <?php
     // WordPress core integrity (v2.3.0).

@@ -232,6 +232,17 @@ class Nubivio_HSH_Health {
     }
 
     private function check_rest_users() {
+        // v2.6.0: reuse the exposure scan's answer instead of a second request to the same endpoint.
+        $listed = class_exists('Nubivio_HSH_Exposure') ? Nubivio_HSH_Exposure::cached_rest_users() : null;
+        if ($listed !== null) {
+            return $this->check(
+                __('REST user enumeration', 'nubivio-healthcare-security-hardening'),
+                $listed ? 'warn' : 'pass',
+                $listed
+                    ? __('The REST users endpoint lists users publicly.', 'nubivio-healthcare-security-hardening')
+                    : __('The REST users endpoint does not expose users publicly.', 'nubivio-healthcare-security-hardening')
+            );
+        }
         $res = wp_remote_get(rest_url('wp/v2/users'), array('timeout' => 8, 'sslverify' => false));
         if (is_wp_error($res)) {
             return $this->check(
