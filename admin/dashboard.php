@@ -37,14 +37,26 @@ $header_clauses = array(
 <div class="ns-card ns-compliance-intro">
     <h2><?php esc_html_e('Compliance', 'nubivio-healthcare-security-hardening'); ?></h2>
     <p class="ns-card-intro">
-        <?php esc_html_e('Optional CRA, GDPR and NIS2 checks plus site health, built around the headers and security.txt this plugin already enforces. Nothing here changes your hardening; it verifies and documents it.', 'nubivio-healthcare-security-hardening'); ?>
+        <?php
+        esc_html_e(
+            'Optional CRA, GDPR and NIS2 checks plus site health, built around the headers and security.txt this plugin already enforces.',
+            'nubivio-healthcare-security-hardening'
+        );
+        echo ' ';
+        esc_html_e('Nothing here changes your hardening; it verifies and documents it.', 'nubivio-healthcare-security-hardening');
+        ?>
     </p>
 
     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="ns-scan-form">
         <input type="hidden" name="action" value="<?php echo esc_attr(Nubivio_HSH::SCAN_ACTION); ?>">
         <?php wp_nonce_field(Nubivio_HSH::SCAN_ACTION); ?>
         <button type="submit" class="ns-btn ns-run-scan"><?php esc_html_e('Run compliance scan', 'nubivio-healthcare-security-hardening'); ?></button>
-        <span class="ns-by"><?php esc_html_e('This may take a few seconds. Scans query the WordPress.org Plugins API (see External Services in the readme).', 'nubivio-healthcare-security-hardening'); ?></span>
+        <span class="ns-by"><?php
+            esc_html_e(
+                'This may take a few seconds. Scans query the WordPress.org Plugins API (see External Services in the readme).',
+                'nubivio-healthcare-security-hardening'
+            );
+        ?></span>
     </form>
 </div>
 
@@ -74,7 +86,13 @@ $header_clauses = array(
         </div>
         <div class="ns-score-meta">
             <span class="ns-pill ns-band-pill-<?php echo esc_attr($band); ?>"><?php
-                echo esc_html($band === 'green' ? __('Green', 'nubivio-healthcare-security-hardening') : ($band === 'amber' ? __('Amber', 'nubivio-healthcare-security-hardening') : __('Red', 'nubivio-healthcare-security-hardening')));
+                if ($band === 'green') {
+                    esc_html_e('Green', 'nubivio-healthcare-security-hardening');
+                } elseif ($band === 'amber') {
+                    esc_html_e('Amber', 'nubivio-healthcare-security-hardening');
+                } else {
+                    esc_html_e('Red', 'nubivio-healthcare-security-hardening');
+                }
             ?></span>
             <?php if ($when): ?>
                 <span class="ns-stat-sub"><?php echo esc_html(sprintf(
@@ -191,7 +209,12 @@ $header_clauses = array(
                 )); ?></p>
             <?php endif; ?>
 
-            <p class="ns-desc"><?php esc_html_e('Uses the official WordPress.org checksums API (MD5). This detects unintended or malicious file changes; it is not a cryptographic tamper-proof check.', 'nubivio-healthcare-security-hardening'); ?></p>
+            <p class="ns-desc"><?php
+                esc_html_e(
+                    'Uses the official WordPress.org checksums API (MD5). This detects unintended or malicious file changes; it is not a cryptographic tamper-proof check.',
+                    'nubivio-healthcare-security-hardening'
+                );
+            ?></p>
             <p class="ns-desc"><?php esc_html_e('Recently updated? Checksums may lag by a few minutes after a core update.', 'nubivio-healthcare-security-hardening'); ?></p>
         </div>
     <?php endif; ?>
@@ -305,7 +328,12 @@ $header_clauses = array(
                 </form>
             <?php endif; ?>
 
-            <p class="ns-desc"><?php esc_html_e('These checks are read-only snapshots taken during the scan. Nothing here changes users, roles or files.', 'nubivio-healthcare-security-hardening'); ?></p>
+            <p class="ns-desc"><?php
+                esc_html_e(
+                    'These checks are read-only snapshots taken during the scan. Nothing here changes users, roles or files.',
+                    'nubivio-healthcare-security-hardening'
+                );
+            ?></p>
         </div>
     <?php endif; ?>
 
@@ -313,35 +341,169 @@ $header_clauses = array(
     // v2.4.0 HSTS preload readiness.
     $hsts = isset($scan['frameworks']['hsts']['summary']) ? $scan['frameworks']['hsts']['summary'] : array();
     if ($hsts):
-        $hsts_rows = array(
-            __('HSTS header present', 'nubivio-healthcare-security-hardening') => !empty($hsts['header_present']) ? __('present', 'nubivio-healthcare-security-hardening') : __('missing', 'nubivio-healthcare-security-hardening'),
-            __('max-age at least one year', 'nubivio-healthcare-security-hardening') => !empty($hsts['max_age_ok']) ? (string) (int) $hsts['max_age'] : (string) (int) $hsts['max_age'],
-            __('includeSubDomains', 'nubivio-healthcare-security-hardening') => !empty($hsts['include_subdomains']) ? __('present', 'nubivio-healthcare-security-hardening') : __('missing', 'nubivio-healthcare-security-hardening'),
-            __('preload directive', 'nubivio-healthcare-security-hardening') => !empty($hsts['preload']) ? __('present', 'nubivio-healthcare-security-hardening') : __('missing', 'nubivio-healthcare-security-hardening'),
-        ); ?>
+        $hsts_present = __('present', 'nubivio-healthcare-security-hardening');
+        $hsts_missing = __('missing', 'nubivio-healthcare-security-hardening');
+        $hsts_rows    = array(
+            array(
+                'label' => __('HSTS header present', 'nubivio-healthcare-security-hardening'),
+                'ok'    => !empty($hsts['header_present']),
+                'value' => !empty($hsts['header_present']) ? $hsts_present : $hsts_missing,
+            ),
+            array(
+                'label' => __('max-age at least one year', 'nubivio-healthcare-security-hardening'),
+                'ok'    => !empty($hsts['max_age_ok']),
+                'value' => (string) (int) $hsts['max_age'],
+            ),
+            array(
+                'label' => __('includeSubDomains', 'nubivio-healthcare-security-hardening'),
+                'ok'    => !empty($hsts['include_subdomains']),
+                'value' => !empty($hsts['include_subdomains']) ? $hsts_present : $hsts_missing,
+            ),
+            array(
+                'label' => __('preload directive', 'nubivio-healthcare-security-hardening'),
+                'ok'    => !empty($hsts['preload']),
+                'value' => !empty($hsts['preload']) ? $hsts_present : $hsts_missing,
+            ),
+        );
+        ?>
         <div class="ns-card">
             <h2><?php esc_html_e('HSTS preload readiness', 'nubivio-healthcare-security-hardening'); ?></h2>
-            <table class="ns-evidence-table"><tbody><?php $i=0; foreach ($hsts_rows as $label => $value): $ok = $i === 0 ? !empty($hsts['header_present']) : ($i === 1 ? !empty($hsts['max_age_ok']) : ($i === 2 ? !empty($hsts['include_subdomains']) : !empty($hsts['preload']))); $i++; ?><tr><td><?php echo esc_html($label); ?></td><td><span class="ns-chip <?php echo $ok ? 'ns-chip-ok' : 'ns-chip-high'; ?>"><?php echo $ok ? esc_html__('yes', 'nubivio-healthcare-security-hardening') : esc_html__('no', 'nubivio-healthcare-security-hardening'); ?></span></td><td><?php echo esc_html($value); ?></td></tr><?php endforeach; ?></tbody></table>
-            <p class="ns-v240-warning"><?php esc_html_e('Preload is nearly irreversible. Removal takes months and remains cached in older browsers. Every subdomain must serve valid HTTPS for as long as your entry stays on the list.', 'nubivio-healthcare-security-hardening'); ?></p>
-            <?php if (!empty($hsts['ready_for_preload']) && !empty($hsts['host'])): ?><p><a class="ns-btn ns-btn-ghost" target="_blank" rel="noopener" href="<?php echo esc_url('https://hstspreload.org/?domain=' . rawurlencode($hsts['host'])); ?>"><?php esc_html_e('Submit at hstspreload.org →', 'nubivio-healthcare-security-hardening'); ?></a></p><?php endif; ?>
+            <table class="ns-evidence-table">
+                <tbody>
+                    <?php foreach ($hsts_rows as $row): ?>
+                        <tr>
+                            <td><?php echo esc_html($row['label']); ?></td>
+                            <td>
+                                <span class="ns-chip <?php echo $row['ok'] ? 'ns-chip-ok' : 'ns-chip-high'; ?>"><?php
+                                    echo $row['ok']
+                                        ? esc_html__('yes', 'nubivio-healthcare-security-hardening')
+                                        : esc_html__('no', 'nubivio-healthcare-security-hardening');
+                                ?></span>
+                            </td>
+                            <td><?php echo esc_html($row['value']); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <p class="ns-v240-warning"><?php
+                esc_html_e(
+                    'Preload is nearly irreversible. Removal takes months and remains cached in older browsers. Every subdomain must serve valid HTTPS for as long as your entry stays on the list.',
+                    'nubivio-healthcare-security-hardening'
+                );
+            ?></p>
+            <?php if (!empty($hsts['ready_for_preload']) && !empty($hsts['host'])): ?>
+                <p>
+                    <a class="ns-btn ns-btn-ghost" target="_blank" rel="noopener"
+                        href="<?php echo esc_url('https://hstspreload.org/?domain=' . rawurlencode($hsts['host'])); ?>"><?php
+                        esc_html_e('Submit at hstspreload.org →', 'nubivio-healthcare-security-hardening');
+                    ?></a>
+                </p>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 
     <?php
     // v2.4.0 DNS health.
     $dns = isset($scan['frameworks']['dns']['summary']) ? $scan['frameworks']['dns']['summary'] : array();
-    if ($dns): $dns_action = wp_nonce_url(admin_url('admin-post.php?action=' . Nubivio_HSH::DNS_REFRESH_ACTION), Nubivio_HSH::DNS_REFRESH_ACTION); ?>
+    if ($dns):
+        $dns_action = wp_nonce_url(
+            admin_url('admin-post.php?action=' . Nubivio_HSH::DNS_REFRESH_ACTION),
+            Nubivio_HSH::DNS_REFRESH_ACTION
+        );
+        $dns_present = '<span class="ns-chip ns-chip-ok">' . esc_html__('present', 'nubivio-healthcare-security-hardening') . '</span>';
+        $dns_missing = '<span class="ns-chip ns-chip-medium">' . esc_html__('missing', 'nubivio-healthcare-security-hardening') . '</span>';
+        $dns_copy    = esc_html__('Copy', 'nubivio-healthcare-security-hardening');
+        ?>
         <div class="ns-card">
             <h2><?php esc_html_e('DNS health', 'nubivio-healthcare-security-hardening'); ?></h2>
-            <p><a class="ns-btn ns-btn-ghost" href="<?php echo esc_url($dns_action); ?>"><?php esc_html_e('Force-refresh DNS data', 'nubivio-healthcare-security-hardening'); ?></a></p>
+            <p>
+                <a class="ns-btn ns-btn-ghost" href="<?php echo esc_url($dns_action); ?>"><?php
+                    esc_html_e('Force-refresh DNS data', 'nubivio-healthcare-security-hardening');
+                ?></a>
+            </p>
             <table class="ns-evidence-table"><tbody>
-                <tr><td>SPF</td><td><?php echo !empty($dns['spf']['records']) ? '<span class="ns-chip ns-chip-ok">' . esc_html__('present', 'nubivio-healthcare-security-hardening') . '</span><br><code>' . esc_html(implode("\n", (array) $dns['spf']['records'])) . '</code>' : '<span class="ns-chip ns-chip-medium">' . esc_html__('missing', 'nubivio-healthcare-security-hardening') . '</span><br><code>v=spf1 -all</code> <button type="button" class="ns-copy" data-copy="v=spf1 -all">' . esc_html__('Copy', 'nubivio-healthcare-security-hardening') . '</button>'; // phpcs:ignore WordPress.Security.EscapeOutput ?></td></tr>
-                <tr><td>DMARC</td><td><?php if (!empty($dns['dmarc']['records'])): ?><span class="ns-chip ns-chip-ok"><?php esc_html_e('present', 'nubivio-healthcare-security-hardening'); ?></span><br><code><?php echo esc_html(implode("\n", (array) $dns['dmarc']['records'])); ?></code><?php else: $dmarc_template = '_dmarc.' . $host . '. IN TXT "v=DMARC1; p=none; rua=mailto:security@' . $host . '; ruf=mailto:security@' . $host . '; fo=1"'; ?><span class="ns-chip ns-chip-medium"><?php esc_html_e('missing', 'nubivio-healthcare-security-hardening'); ?></span><br><code><?php echo esc_html($dmarc_template); ?></code> <button type="button" class="ns-copy" data-copy="<?php echo esc_attr($dmarc_template); ?>"><?php esc_html_e('Copy', 'nubivio-healthcare-security-hardening'); ?></button><?php endif; ?></td></tr>
-                <tr><td>DKIM</td><td><?php echo !empty($dns['dkim']['matched']) ? esc_html(implode(', ', (array) $dns['dkim']['matched'])) : esc_html__('No common selector matched.', 'nubivio-healthcare-security-hardening'); ?></td></tr>
-                <tr><td>CAA</td><td><?php echo !empty($dns['caa']['records']) ? '<span class="ns-chip ns-chip-ok">' . esc_html__('present', 'nubivio-healthcare-security-hardening') . '</span>' : '<code>' . esc_html($host . '. IN CAA 0 issue "letsencrypt.org"') . '</code> <button type="button" class="ns-copy" data-copy="' . esc_attr($host . '. IN CAA 0 issue &quot;letsencrypt.org&quot;') . '">' . esc_html__('Copy', 'nubivio-healthcare-security-hardening') . '</button>'; // phpcs:ignore WordPress.Security.EscapeOutput ?></td></tr>
-                <tr><td>MTA-STS</td><td><?php echo !empty($dns['mta_sts']['records']) || !empty($dns['mta_sts']['mx']) ? esc_html(implode(', ', (array) $dns['mta_sts']['mx'])) : '<code>version: STSv1; mode: enforce; mx: mail.' . esc_html($host) . '; max_age: 604800</code>'; // phpcs:ignore WordPress.Security.EscapeOutput ?></td></tr>
-                <tr><td>DNSSEC</td><td><?php echo !empty($dns['dnssec']['indicator']) ? esc_html__('Native indicator found.', 'nubivio-healthcare-security-hardening') : esc_html__('No native indicator found.', 'nubivio-healthcare-security-hardening'); ?><?php if (array_key_exists('doh', (array) $dns['dnssec']) && $dns['dnssec']['doh'] !== null): ?> <?php echo !empty($dns['dnssec']['doh']) ? esc_html__('Cloudflare DoH validated.', 'nubivio-healthcare-security-hardening') : esc_html__('Cloudflare DoH did not validate.', 'nubivio-healthcare-security-hardening'); ?><?php endif; ?></td></tr>
-                <tr><td>IPv6 / AAAA</td><td><?php echo !empty($dns['aaaa']['records']) ? esc_html__('present', 'nubivio-healthcare-security-hardening') : esc_html__('No AAAA record.', 'nubivio-healthcare-security-hardening'); ?></td></tr>
+                <tr>
+                    <td>SPF</td>
+                    <td><?php
+                    // phpcs:disable WordPress.Security.EscapeOutput -- every dynamic part below is escaped.
+                    if (!empty($dns['spf']['records'])) {
+                        echo $dns_present . '<br><code>' . esc_html(implode("\n", (array) $dns['spf']['records'])) . '</code>';
+                    } else {
+                        echo $dns_missing . '<br><code>v=spf1 -all</code> '
+                            . '<button type="button" class="ns-copy" data-copy="v=spf1 -all">' . $dns_copy . '</button>';
+                    }
+                    // phpcs:enable WordPress.Security.EscapeOutput
+                    ?></td>
+                </tr>
+                <tr>
+                    <td>DMARC</td>
+                    <td><?php
+                    // phpcs:disable WordPress.Security.EscapeOutput -- every dynamic part below is escaped.
+                    if (!empty($dns['dmarc']['records'])) {
+                        echo $dns_present . '<br><code>' . esc_html(implode("\n", (array) $dns['dmarc']['records'])) . '</code>';
+                    } else {
+                        $dmarc_template = '_dmarc.' . $host . '. IN TXT "v=DMARC1; p=none; rua=mailto:security@' . $host
+                            . '; ruf=mailto:security@' . $host . '; fo=1"';
+                        echo $dns_missing . '<br><code>' . esc_html($dmarc_template) . '</code> '
+                            . '<button type="button" class="ns-copy" data-copy="' . esc_attr($dmarc_template) . '">' . $dns_copy . '</button>';
+                    }
+                    // phpcs:enable WordPress.Security.EscapeOutput
+                    ?></td>
+                </tr>
+                <tr>
+                    <td>DKIM</td>
+                    <td><?php
+                    echo !empty($dns['dkim']['matched'])
+                        ? esc_html(implode(', ', (array) $dns['dkim']['matched']))
+                        : esc_html__('No common selector matched.', 'nubivio-healthcare-security-hardening');
+                    ?></td>
+                </tr>
+                <tr>
+                    <td>CAA</td>
+                    <td><?php
+                    // phpcs:disable WordPress.Security.EscapeOutput -- every dynamic part below is escaped.
+                    if (!empty($dns['caa']['records'])) {
+                        echo $dns_present;
+                    } else {
+                        echo '<code>' . esc_html($host . '. IN CAA 0 issue "letsencrypt.org"') . '</code> '
+                            . '<button type="button" class="ns-copy" data-copy="'
+                            . esc_attr($host . '. IN CAA 0 issue &quot;letsencrypt.org&quot;') . '">' . $dns_copy . '</button>';
+                    }
+                    // phpcs:enable WordPress.Security.EscapeOutput
+                    ?></td>
+                </tr>
+                <tr>
+                    <td>MTA-STS</td>
+                    <td><?php
+                    // phpcs:disable WordPress.Security.EscapeOutput -- every dynamic part below is escaped.
+                    echo !empty($dns['mta_sts']['records']) || !empty($dns['mta_sts']['mx'])
+                        ? esc_html(implode(', ', (array) $dns['mta_sts']['mx']))
+                        : '<code>version: STSv1; mode: enforce; mx: mail.' . esc_html($host) . '; max_age: 604800</code>';
+                    // phpcs:enable WordPress.Security.EscapeOutput
+                    ?></td>
+                </tr>
+                <tr>
+                    <td>DNSSEC</td>
+                    <td><?php
+                    echo !empty($dns['dnssec']['indicator'])
+                        ? esc_html__('Native indicator found.', 'nubivio-healthcare-security-hardening')
+                        : esc_html__('No native indicator found.', 'nubivio-healthcare-security-hardening');
+                    if (array_key_exists('doh', (array) $dns['dnssec']) && $dns['dnssec']['doh'] !== null) {
+                        echo ' ';
+                        echo !empty($dns['dnssec']['doh'])
+                            ? esc_html__('Cloudflare DoH validated.', 'nubivio-healthcare-security-hardening')
+                            : esc_html__('Cloudflare DoH did not validate.', 'nubivio-healthcare-security-hardening');
+                    }
+                    ?></td>
+                </tr>
+                <tr>
+                    <td>IPv6 / AAAA</td>
+                    <td><?php
+                    echo !empty($dns['aaaa']['records'])
+                        ? esc_html__('present', 'nubivio-healthcare-security-hardening')
+                        : esc_html__('No AAAA record.', 'nubivio-healthcare-security-hardening');
+                    ?></td>
+                </tr>
             </tbody></table>
         </div>
     <?php endif; ?>
@@ -349,15 +511,111 @@ $header_clauses = array(
     <?php
     // v2.4.0 CSP report-only card.
     $csp = isset($scan['frameworks']['csp']['summary']) ? $scan['frameworks']['csp']['summary'] : array();
-    if ($csp): $inventory_action = wp_nonce_url(admin_url('admin-post.php?action=' . Nubivio_HSH::CSP_INVENTORY_ACTION), Nubivio_HSH::CSP_INVENTORY_ACTION); $toggle_action = wp_nonce_url(admin_url('admin-post.php?action=' . Nubivio_HSH::CSP_TOGGLE_ACTION), Nubivio_HSH::CSP_TOGGLE_ACTION); $hosts_count=0; foreach ((array) $csp['seen_hosts'] as $list) $hosts_count += count((array) $list); ?>
+    if ($csp):
+        $inventory_action = wp_nonce_url(
+            admin_url('admin-post.php?action=' . Nubivio_HSH::CSP_INVENTORY_ACTION),
+            Nubivio_HSH::CSP_INVENTORY_ACTION
+        );
+        $toggle_action    = wp_nonce_url(
+            admin_url('admin-post.php?action=' . Nubivio_HSH::CSP_TOGGLE_ACTION),
+            Nubivio_HSH::CSP_TOGGLE_ACTION
+        );
+        $hosts_count      = 0;
+        foreach ((array) $csp['seen_hosts'] as $list) {
+            $hosts_count += count((array) $list);
+        }
+        $csp_inventory_at = !empty($csp['inventory_at'])
+            ? date_i18n(get_option('date_format'), (int) $csp['inventory_at'])
+            : __('never', 'nubivio-healthcare-security-hardening');
+        $csp_inventory    = sprintf(
+            /* translators: 1: number of hosts, 2: number of inline scripts, 3: date of the last inventory scan. */
+            __('Inventory: %1$d hosts detected and %2$d inline scripts counted. Last inventory scan: %3$s.', 'nubivio-healthcare-security-hardening'),
+            $hosts_count,
+            isset($csp['inline_scripts']) ? (int) $csp['inline_scripts'] : 0,
+            $csp_inventory_at
+        );
+        $date_format      = get_option('date_format');
+        ?>
         <div class="ns-card">
             <h2><?php esc_html_e('CSP report-only violations', 'nubivio-healthcare-security-hardening'); ?></h2>
-            <p><span class="ns-chip <?php echo !empty($csp['enabled']) ? 'ns-chip-ok' : 'ns-chip-low'; ?>"><?php echo !empty($csp['enabled']) ? esc_html__('enabled', 'nubivio-healthcare-security-hardening') : esc_html__('disabled', 'nubivio-healthcare-security-hardening'); ?></span></p>
-            <p class="ns-card-intro"><?php echo esc_html(sprintf(__('Inventory: %1$d hosts detected and %2$d inline scripts counted. Last inventory scan: %3$s.', 'nubivio-healthcare-security-hardening'), $hosts_count, isset($csp['inline_scripts']) ? (int) $csp['inline_scripts'] : 0, !empty($csp['inventory_at']) ? date_i18n(get_option('date_format'), (int) $csp['inventory_at']) : __('never', 'nubivio-healthcare-security-hardening'))); ?></p>
-            <p><a class="ns-btn ns-btn-ghost" href="<?php echo esc_url($inventory_action); ?>"><?php esc_html_e('Refresh inventory now', 'nubivio-healthcare-security-hardening'); ?></a> <a class="ns-btn ns-btn-ghost" href="<?php echo esc_url($toggle_action); ?>"><?php echo !empty($csp['enabled']) ? esc_html__('Disable report-only', 'nubivio-healthcare-security-hardening') : esc_html__('Enable report-only', 'nubivio-healthcare-security-hardening'); ?></a></p>
-            <p class="ns-desc"><?php esc_html_e('This policy reports without blocking. When you see no new relevant violations for 2 weeks, you are ready to enforce (coming in v2.5.0).', 'nubivio-healthcare-security-hardening'); ?></p>
-            <?php $violations = (array) $csp['violations']; usort($violations, function($a, $b) { return (int) $b['count'] <=> (int) $a['count']; }); if ($violations): ?><table class="ns-evidence-table"><thead><tr><th><?php esc_html_e('Directive', 'nubivio-healthcare-security-hardening'); ?></th><th><?php esc_html_e('Blocked URI', 'nubivio-healthcare-security-hardening'); ?></th><th><?php esc_html_e('First / last seen', 'nubivio-healthcare-security-hardening'); ?></th><th><?php esc_html_e('Count', 'nubivio-healthcare-security-hardening'); ?></th><th><?php esc_html_e('Action', 'nubivio-healthcare-security-hardening'); ?></th></tr></thead><tbody><?php foreach ($violations as $v): ?><tr><td><?php echo esc_html($v['directive']); ?></td><td><code><?php echo esc_html($v['blocked_uri']); ?></code></td><td><?php echo esc_html(date_i18n(get_option('date_format'), (int) $v['first_seen']) . ' / ' . date_i18n(get_option('date_format'), (int) $v['last_seen'])); ?></td><td><?php echo (int) $v['count']; ?></td><td><form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"><input type="hidden" name="action" value="<?php echo esc_attr(Nubivio_HSH::CSP_ALLOWLIST_ACTION); ?>"><input type="hidden" name="directive" value="<?php echo esc_attr($v['directive']); ?>"><input type="hidden" name="blocked_uri" value="<?php echo esc_attr($v['blocked_uri']); ?>"><?php wp_nonce_field(Nubivio_HSH::CSP_ALLOWLIST_ACTION); ?><button type="submit" class="ns-btn ns-btn-ghost"><?php esc_html_e('Add to allowlist', 'nubivio-healthcare-security-hardening'); ?></button></form></td></tr><?php endforeach; ?></tbody></table><?php else: ?><p class="ns-ok-line"><?php esc_html_e('No violations received yet.', 'nubivio-healthcare-security-hardening'); ?></p><?php endif; ?>
-            <h3><?php esc_html_e('SRI audit', 'nubivio-healthcare-security-hardening'); ?></h3><p><?php esc_html_e('Dynamic scripts (SRI not applicable)', 'nubivio-healthcare-security-hardening'); ?>: <?php echo esc_html(implode(', ', (array) $csp['sri']['dynamic'])); ?></p><p><?php esc_html_e('Candidates for SRI', 'nubivio-healthcare-security-hardening'); ?>: <?php echo esc_html(implode(', ', (array) $csp['sri']['candidates'])); ?></p>
+            <p>
+                <span class="ns-chip <?php echo !empty($csp['enabled']) ? 'ns-chip-ok' : 'ns-chip-low'; ?>"><?php
+                    echo !empty($csp['enabled'])
+                        ? esc_html__('enabled', 'nubivio-healthcare-security-hardening')
+                        : esc_html__('disabled', 'nubivio-healthcare-security-hardening');
+                ?></span>
+            </p>
+            <p class="ns-card-intro"><?php echo esc_html($csp_inventory); ?></p>
+            <p>
+                <a class="ns-btn ns-btn-ghost" href="<?php echo esc_url($inventory_action); ?>"><?php
+                    esc_html_e('Refresh inventory now', 'nubivio-healthcare-security-hardening');
+                ?></a>
+                <a class="ns-btn ns-btn-ghost" href="<?php echo esc_url($toggle_action); ?>"><?php
+                    echo !empty($csp['enabled'])
+                        ? esc_html__('Disable report-only', 'nubivio-healthcare-security-hardening')
+                        : esc_html__('Enable report-only', 'nubivio-healthcare-security-hardening');
+                ?></a>
+            </p>
+            <p class="ns-desc"><?php
+                esc_html_e(
+                    'This policy reports without blocking. When you see no new relevant violations for 2 weeks, you are ready to enforce (coming in v2.5.0).',
+                    'nubivio-healthcare-security-hardening'
+                );
+            ?></p>
+            <?php
+            $violations = (array) $csp['violations'];
+            usort($violations, function ($a, $b) {
+                return (int) $b['count'] <=> (int) $a['count'];
+            });
+            if ($violations): ?>
+                <table class="ns-evidence-table">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e('Directive', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('Blocked URI', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('First / last seen', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('Count', 'nubivio-healthcare-security-hardening'); ?></th>
+                            <th><?php esc_html_e('Action', 'nubivio-healthcare-security-hardening'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($violations as $v): ?>
+                            <tr>
+                                <td><?php echo esc_html($v['directive']); ?></td>
+                                <td><code><?php echo esc_html($v['blocked_uri']); ?></code></td>
+                                <td><?php
+                                    echo esc_html(
+                                        date_i18n($date_format, (int) $v['first_seen']) . ' / ' . date_i18n($date_format, (int) $v['last_seen'])
+                                    );
+                                ?></td>
+                                <td><?php echo (int) $v['count']; ?></td>
+                                <td>
+                                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                                        <input type="hidden" name="action" value="<?php echo esc_attr(Nubivio_HSH::CSP_ALLOWLIST_ACTION); ?>">
+                                        <input type="hidden" name="directive" value="<?php echo esc_attr($v['directive']); ?>">
+                                        <input type="hidden" name="blocked_uri" value="<?php echo esc_attr($v['blocked_uri']); ?>">
+                                        <?php wp_nonce_field(Nubivio_HSH::CSP_ALLOWLIST_ACTION); ?>
+                                        <button type="submit" class="ns-btn ns-btn-ghost"><?php
+                                            esc_html_e('Add to allowlist', 'nubivio-healthcare-security-hardening');
+                                        ?></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <p class="ns-ok-line"><?php esc_html_e('No violations received yet.', 'nubivio-healthcare-security-hardening'); ?></p>
+            <?php endif; ?>
+            <h3><?php esc_html_e('SRI audit', 'nubivio-healthcare-security-hardening'); ?></h3>
+            <p><?php
+                esc_html_e('Dynamic scripts (SRI not applicable)', 'nubivio-healthcare-security-hardening');
+                echo ': ' . esc_html(implode(', ', (array) $csp['sri']['dynamic']));
+            ?></p>
+            <p><?php
+                esc_html_e('Candidates for SRI', 'nubivio-healthcare-security-hardening');
+                echo ': ' . esc_html(implode(', ', (array) $csp['sri']['candidates']));
+            ?></p>
             <?php
             $csp_grade      = isset($csp['grade']) ? $csp['grade'] : array('grade' => 'F', 'score' => 0, 'issues' => array());
             $enforce_action = wp_nonce_url(
@@ -430,8 +688,72 @@ $header_clauses = array(
     <?php
     // v2.4.0 TLS overview.
     $tls = isset($scan['frameworks']['tls']['summary']) ? $scan['frameworks']['tls']['summary'] : array();
-    if ($tls): $days = isset($tls['days_remaining']) ? $tls['days_remaining'] : null; $pill = $days === null ? 'ns-chip-low' : ($days < 14 ? 'ns-chip-high' : ($days < 30 ? 'ns-chip-medium' : 'ns-chip-ok')); ?>
-        <div class="ns-card"><h2><?php esc_html_e('TLS overview', 'nubivio-healthcare-security-hardening'); ?></h2><table class="ns-evidence-table"><tbody><tr><td><?php esc_html_e('Certificate subject', 'nubivio-healthcare-security-hardening'); ?></td><td><?php echo esc_html($tls['subject_cn']); ?></td></tr><tr><td><?php esc_html_e('Issuer', 'nubivio-healthcare-security-hardening'); ?></td><td><?php echo esc_html(trim($tls['issuer_cn'] . ' ' . $tls['issuer_o'])); ?></td></tr><tr><td><?php esc_html_e('Valid until', 'nubivio-healthcare-security-hardening'); ?></td><td><?php echo !empty($tls['valid_to']) ? esc_html(date_i18n(get_option('date_format'), (int) $tls['valid_to'])) : ''; ?> <span class="ns-chip <?php echo esc_attr($pill); ?>"><?php echo $days === null ? esc_html__('unknown', 'nubivio-healthcare-security-hardening') : esc_html(sprintf(_n('%d day', '%d days', (int) $days, 'nubivio-healthcare-security-hardening'), (int) $days)); ?></span></td></tr><tr><td>SAN</td><td><?php echo esc_html(implode(', ', (array) $tls['sans'])); ?></td></tr><tr><td><?php esc_html_e('Signature algorithm', 'nubivio-healthcare-security-hardening'); ?></td><td><?php echo esc_html($tls['signature']); ?></td></tr><?php if (!empty($tls['dane'])): ?><tr><td>DANE/TLSA</td><td><a href="https://ssl-tools.net/dane" target="_blank" rel="noopener"><?php esc_html_e('DANE/TLSA record present. Validate externally.', 'nubivio-healthcare-security-hardening'); ?></a></td></tr><?php endif; ?></tbody></table><p class="ns-desc"><?php esc_html_e('For a full TLS cipher analysis use SSL Labs.', 'nubivio-healthcare-security-hardening'); ?> <a href="https://www.ssllabs.com/ssltest/" target="_blank" rel="noopener">SSL Labs</a>.</p></div>
+    if ($tls):
+        $days = isset($tls['days_remaining']) ? $tls['days_remaining'] : null;
+        if ($days === null) {
+            $pill = 'ns-chip-low';
+        } elseif ($days < 14) {
+            $pill = 'ns-chip-high';
+        } elseif ($days < 30) {
+            $pill = 'ns-chip-medium';
+        } else {
+            $pill = 'ns-chip-ok';
+        }
+        $valid_to = !empty($tls['valid_to']) ? date_i18n(get_option('date_format'), (int) $tls['valid_to']) : '';
+        if ($days === null) {
+            $days_text = __('unknown', 'nubivio-healthcare-security-hardening');
+        } else {
+            $days_text = sprintf(
+                /* translators: %d: number of days until the certificate expires. */
+                _n('%d day', '%d days', (int) $days, 'nubivio-healthcare-security-hardening'),
+                (int) $days
+            );
+        }
+        ?>
+        <div class="ns-card">
+            <h2><?php esc_html_e('TLS overview', 'nubivio-healthcare-security-hardening'); ?></h2>
+            <table class="ns-evidence-table">
+                <tbody>
+                    <tr>
+                        <td><?php esc_html_e('Certificate subject', 'nubivio-healthcare-security-hardening'); ?></td>
+                        <td><?php echo esc_html($tls['subject_cn']); ?></td>
+                    </tr>
+                    <tr>
+                        <td><?php esc_html_e('Issuer', 'nubivio-healthcare-security-hardening'); ?></td>
+                        <td><?php echo esc_html(trim($tls['issuer_cn'] . ' ' . $tls['issuer_o'])); ?></td>
+                    </tr>
+                    <tr>
+                        <td><?php esc_html_e('Valid until', 'nubivio-healthcare-security-hardening'); ?></td>
+                        <td>
+                            <?php echo esc_html($valid_to); ?>
+                            <span class="ns-chip <?php echo esc_attr($pill); ?>"><?php echo esc_html($days_text); ?></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>SAN</td>
+                        <td><?php echo esc_html(implode(', ', (array) $tls['sans'])); ?></td>
+                    </tr>
+                    <tr>
+                        <td><?php esc_html_e('Signature algorithm', 'nubivio-healthcare-security-hardening'); ?></td>
+                        <td><?php echo esc_html($tls['signature']); ?></td>
+                    </tr>
+                    <?php if (!empty($tls['dane'])): ?>
+                        <tr>
+                            <td>DANE/TLSA</td>
+                            <td>
+                                <a href="https://ssl-tools.net/dane" target="_blank" rel="noopener"><?php
+                                    esc_html_e('DANE/TLSA record present. Validate externally.', 'nubivio-healthcare-security-hardening');
+                                ?></a>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+            <p class="ns-desc">
+                <?php esc_html_e('For a full TLS cipher analysis use SSL Labs.', 'nubivio-healthcare-security-hardening'); ?>
+                <a href="https://www.ssllabs.com/ssltest/" target="_blank" rel="noopener">SSL Labs</a>.
+            </p>
+        </div>
     <?php endif; ?>
 
     <?php // Health checklist.
@@ -460,7 +782,12 @@ $header_clauses = array(
     <div class="ns-card ns-evidence">
         <h2><?php esc_html_e('Security headers as compliance evidence', 'nubivio-healthcare-security-hardening'); ?></h2>
         <?php if (empty($probe['ok'])): ?>
-            <p class="ns-card-intro"><?php esc_html_e('Live verification was unavailable, so the table shows configured headers. A hardened host may block self-requests.', 'nubivio-healthcare-security-hardening'); ?></p>
+            <p class="ns-card-intro"><?php
+                esc_html_e(
+                    'Live verification was unavailable, so the table shows configured headers. A hardened host may block self-requests.',
+                    'nubivio-healthcare-security-hardening'
+                );
+            ?></p>
         <?php endif; ?>
         <table class="ns-evidence-table">
             <thead>
@@ -734,7 +1061,12 @@ $header_clauses = array(
 
 <div class="ns-card ns-docs">
     <h2><?php esc_html_e('Compliance documents', 'nubivio-healthcare-security-hardening'); ?></h2>
-    <p class="ns-card-intro"><?php esc_html_e('Generated from your own settings. Printable HTML you can save as PDF from the browser. These are starting-point documents, not certifications.', 'nubivio-healthcare-security-hardening'); ?></p>
+    <p class="ns-card-intro"><?php
+        esc_html_e(
+            'Generated from your own settings. Printable HTML you can save as PDF from the browser. These are starting-point documents, not certifications.',
+            'nubivio-healthcare-security-hardening'
+        );
+    ?></p>
     <div class="ns-doc-links">
         <a class="ns-btn ns-btn-ghost" href="<?php echo esc_url($doc_url('vdp')); ?>"><?php esc_html_e('Vulnerability Disclosure Policy', 'nubivio-healthcare-security-hardening'); ?></a>
         <a class="ns-btn ns-btn-ghost" href="<?php echo esc_url($doc_url('sbom')); ?>"><?php esc_html_e('CycloneDX SBOM (JSON)', 'nubivio-healthcare-security-hardening'); ?></a>

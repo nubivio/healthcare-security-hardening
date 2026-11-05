@@ -68,9 +68,25 @@ class Nubivio_HSH_Dns {
             'lookups' => $spf_lookups,
         );
         if (count($spf) === 0) {
-            $this->add($findings, $counts, 'medium', __('No SPF record found. Suggested minimal record: `v=spf1 -all` (deny all outbound mail).', 'nubivio-healthcare-security-hardening'));
+            $this->add(
+                $findings,
+                $counts,
+                'medium',
+                __(
+                    'No SPF record found. Suggested minimal record: `v=spf1 -all` (deny all outbound mail).',
+                    'nubivio-healthcare-security-hardening'
+                )
+            );
         } elseif (count($spf) > 1) {
-            $this->add($findings, $counts, 'high', __('Multiple SPF records found. RFC 7208 requires exactly one; mail authentication will fail. Merge into a single record.', 'nubivio-healthcare-security-hardening'));
+            $this->add(
+                $findings,
+                $counts,
+                'high',
+                __(
+                    'Multiple SPF records found. RFC 7208 requires exactly one; mail authentication will fail. Merge into a single record.',
+                    'nubivio-healthcare-security-hardening'
+                )
+            );
         } else {
             if ($spf_policy === 'softfail') {
                 $this->add(
@@ -124,12 +140,24 @@ class Nubivio_HSH_Dns {
                 $counts,
                 'medium',
                 sprintf(
-                    __('No DMARC record found. Suggested template: _dmarc.%1$s. IN TXT "v=DMARC1; p=none; rua=mailto:security@%1$s; ruf=mailto:security@%1$s; fo=1"', 'nubivio-healthcare-security-hardening'),
+                    /* translators: %1$s: domain name. */
+                    __(
+                        'No DMARC record found. Suggested template: _dmarc.%1$s. IN TXT "v=DMARC1; p=none; rua=mailto:security@%1$s; ruf=mailto:security@%1$s; fo=1"',
+                        'nubivio-healthcare-security-hardening'
+                    ),
                     $host
                 )
             );
         } elseif (preg_match('/\bp\s*=\s*none\b/i', implode(';', $dmarc))) {
-            $this->add($findings, $counts, 'low', __('DMARC policy is `none` (monitor only). Consider strengthening to `quarantine` or `reject` after reviewing reports.', 'nubivio-healthcare-security-hardening'));
+            $this->add(
+                $findings,
+                $counts,
+                'low',
+                __(
+                    'DMARC policy is `none` (monitor only). Consider strengthening to `quarantine` or `reject` after reviewing reports.',
+                    'nubivio-healthcare-security-hardening'
+                )
+            );
         }
 
         // DKIM.
@@ -229,15 +257,12 @@ class Nubivio_HSH_Dns {
             'mx'      => isset($mx[1]) ? $mx[1] : array(),
         );
         if (!$mta_records && $policy === '') {
-            $this->add(
-                $findings,
-                $counts,
-                'low',
-                sprintf(
-                    __('MTA-STS is not configured. TXT template: _mta-sts.%1$s. IN TXT "v=STSv1; id=$(date +%%Y%%m%%d%%H%%M)". Policy template: version: STSv1; mode: enforce; mx: mail.%1$s; max_age: 604800', 'nubivio-healthcare-security-hardening'),
-                    $host
-                )
+            /* translators: %1$s: domain name. */
+            $template = __(
+                'MTA-STS is not configured. TXT template: _mta-sts.%1$s. IN TXT "v=STSv1; id=$(date +%%Y%%m%%d%%H%%M)". Policy template: version: STSv1; mode: enforce; mx: mail.%1$s; max_age: 604800',
+                'nubivio-healthcare-security-hardening'
             );
+            $this->add($findings, $counts, 'low', sprintf($template, $host));
         }
 
         // DNSSEC indicator (native, and optional DoH validation).

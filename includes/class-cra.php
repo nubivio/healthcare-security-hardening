@@ -109,7 +109,10 @@ class Nubivio_HSH_Cra {
                     $message  = __('Was in the WordPress.org directory but appears to be removed or closed.', 'nubivio-healthcare-security-hardening');
                 } else {
                     $severity = 'medium';
-                    $message  = __('Not in the public WordPress.org directory. Verify this is a private or commercial plugin and that you have a trusted update path.', 'nubivio-healthcare-security-hardening');
+                    $message  = __(
+                        'Not in the public WordPress.org directory. Verify this is a private or commercial plugin and that you have a trusted update path.',
+                        'nubivio-healthcare-security-hardening'
+                    );
                 }
 
                 $findings[] = $this->finding($name, $slug, $severity, $message);

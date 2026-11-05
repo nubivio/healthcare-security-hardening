@@ -400,7 +400,10 @@ class Nubivio_HSH_Access {
 
         $findings[] = $this->finding('medium', sprintf(
             /* translators: 1: host configured in the siteurl option, 2: host of the current request. */
-            __('Site URL host (%1$s) does not match the current request host (%2$s). If unexpected, an attacker may have changed siteurl to redirect notifications.', 'nubivio-healthcare-security-hardening'),
+            __(
+                'Site URL host (%1$s) does not match the current request host (%2$s). If unexpected, an attacker may have changed siteurl to redirect notifications.',
+                'nubivio-healthcare-security-hardening'
+            ),
             $option_host,
             $request_host
         ));

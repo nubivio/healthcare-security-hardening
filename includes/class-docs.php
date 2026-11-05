@@ -211,17 +211,25 @@ class Nubivio_HSH_Docs {
         echo '<p class="muted">' . esc_html($this->site_name()) . ' - ' . esc_html($this->site_url()) . '</p>';
 
         echo '<h2>' . esc_html__('Introduction', 'nubivio-healthcare-security-hardening') . '</h2>';
-        echo '<p>' . esc_html__('We take the security of our systems seriously and we value the security community. The responsible disclosure of security vulnerabilities helps us keep our users safe. This policy sets out how to report vulnerabilities to us.', 'nubivio-healthcare-security-hardening') . '</p>';
+        $intro = array(
+            __('We take the security of our systems seriously and we value the security community.', 'nubivio-healthcare-security-hardening'),
+            __('The responsible disclosure of security vulnerabilities helps us keep our users safe.', 'nubivio-healthcare-security-hardening'),
+            __('This policy sets out how to report vulnerabilities to us.', 'nubivio-healthcare-security-hardening'),
+        );
+        echo '<p>' . esc_html(implode(' ', $intro)) . '</p>';
 
         echo '<h2>' . esc_html__('How to report', 'nubivio-healthcare-security-hardening') . '</h2>';
         echo '<p>' . esc_html__('Please send reports to the contact below.', 'nubivio-healthcare-security-hardening') . '</p>';
-        echo '<p><strong>' . esc_html__('Contact:', 'nubivio-healthcare-security-hardening') . '</strong> ' . esc_html($this->contact()) . '</p>';
+        echo '<p><strong>' . esc_html__('Contact:', 'nubivio-healthcare-security-hardening') . '</strong> '
+            . esc_html($this->contact()) . '</p>';
 
         if (trim((string) $o['sectxt_policy']) !== '') {
-            echo '<p><strong>' . esc_html__('Policy reference:', 'nubivio-healthcare-security-hardening') . '</strong> <a href="' . esc_url($o['sectxt_policy']) . '">' . esc_html($o['sectxt_policy']) . '</a></p>';
+            echo '<p><strong>' . esc_html__('Policy reference:', 'nubivio-healthcare-security-hardening') . '</strong> '
+                . '<a href="' . esc_url($o['sectxt_policy']) . '">' . esc_html($o['sectxt_policy']) . '</a></p>';
         }
         if (trim((string) $o['sectxt_ack']) !== '') {
-            echo '<p><strong>' . esc_html__('Acknowledgments:', 'nubivio-healthcare-security-hardening') . '</strong> <a href="' . esc_url($o['sectxt_ack']) . '">' . esc_html($o['sectxt_ack']) . '</a></p>';
+            echo '<p><strong>' . esc_html__('Acknowledgments:', 'nubivio-healthcare-security-hardening') . '</strong> '
+                . '<a href="' . esc_url($o['sectxt_ack']) . '">' . esc_html($o['sectxt_ack']) . '</a></p>';
         }
 
         echo '<h2>' . esc_html__('Our commitment', 'nubivio-healthcare-security-hardening') . '</h2>';
@@ -234,7 +242,10 @@ class Nubivio_HSH_Docs {
         echo '<h2>' . esc_html__('Scope', 'nubivio-healthcare-security-hardening') . '</h2>';
         echo '<p>' . esc_html(sprintf(
             /* translators: %s: site URL. */
-            __('This policy applies to the public web property at %s. This document supports the vulnerability disclosure requirements of the EU Cyber Resilience Act, Article 14.', 'nubivio-healthcare-security-hardening'),
+            __(
+                'This policy applies to the public web property at %s. This document supports the vulnerability disclosure requirements of the EU Cyber Resilience Act, Article 14.',
+                'nubivio-healthcare-security-hardening'
+            ),
             $this->site_url()
         )) . '</p>';
 
@@ -316,7 +327,10 @@ class Nubivio_HSH_Docs {
         echo '<h1>' . esc_html__('Conformity self-assessment declaration', 'nubivio-healthcare-security-hardening') . '</h1>';
         echo '<p class="muted">' . esc_html($this->site_name()) . ' - ' . esc_html($this->site_url()) . ' - ' . esc_html(gmdate('Y-m-d')) . '</p>';
         echo '<p><strong>' . esc_html__('Contact:', 'nubivio-healthcare-security-hardening') . '</strong> ' . esc_html($this->contact()) . '</p>';
-        echo '<p class="muted">' . esc_html__('This is a self-assessment, not a certification. It records the current posture of the public web property and is intended as a starting point for a formal compliance programme.', 'nubivio-healthcare-security-hardening') . '</p>';
+        echo '<p class="muted">' . esc_html__(
+            'This is a self-assessment, not a certification. It records the current posture of the public web property and is intended as a starting point for a formal compliance programme.',
+            'nubivio-healthcare-security-hardening'
+        ) . '</p>';
 
         $sections = array(
             'CRA' => __('EU Cyber Resilience Act (CRA)', 'nubivio-healthcare-security-hardening'),
@@ -325,10 +339,22 @@ class Nubivio_HSH_Docs {
             'NEN7510' => __('NEN 7510 (Dutch healthcare information security)', 'nubivio-healthcare-security-hardening'),
         );
         $notes = array(
-            'CRA' => __('A vulnerability disclosure contact is published via security.txt (RFC 9116), supporting Article 14 coordinated disclosure.', 'nubivio-healthcare-security-hardening'),
-            'GDPR' => __('Transport encryption and browser protections are enforced. Data minimisation is supported through Referrer-Policy and third-party script control.', 'nubivio-healthcare-security-hardening'),
-            'NIS2' => __('Technical measures under Article 21 are assessed, including encryption in transit, backups, access control and logging.', 'nubivio-healthcare-security-hardening'),
-            'NEN7510' => __('Web hardening measures relevant to Dutch healthcare information security are documented, as a building block within a wider NEN 7510 programme.', 'nubivio-healthcare-security-hardening'),
+            'CRA'     => __(
+                'A vulnerability disclosure contact is published via security.txt (RFC 9116), supporting Article 14 coordinated disclosure.',
+                'nubivio-healthcare-security-hardening'
+            ),
+            'GDPR'    => __(
+                'Transport encryption and browser protections are enforced. Data minimisation is supported through Referrer-Policy and third-party script control.',
+                'nubivio-healthcare-security-hardening'
+            ),
+            'NIS2'    => __(
+                'Technical measures under Article 21 are assessed, including encryption in transit, backups, access control and logging.',
+                'nubivio-healthcare-security-hardening'
+            ),
+            'NEN7510' => __(
+                'Web hardening measures relevant to Dutch healthcare information security are documented, as a building block within a wider NEN 7510 programme.',
+                'nubivio-healthcare-security-hardening'
+            ),
         );
 
         foreach ($sections as $key => $title) {
@@ -371,7 +397,9 @@ class Nubivio_HSH_Docs {
             if (empty($scan['frameworks'][$key]['findings'])) {
                 continue;
             }
-            echo '<h3>' . esc_html($label) . '</h3><table><tr><th>' . esc_html__('Severity', 'nubivio-healthcare-security-hardening') . '</th><th>' . esc_html__('Finding', 'nubivio-healthcare-security-hardening') . '</th></tr>';
+            echo '<h3>' . esc_html($label) . '</h3><table><tr>'
+                . '<th>' . esc_html__('Severity', 'nubivio-healthcare-security-hardening') . '</th>'
+                . '<th>' . esc_html__('Finding', 'nubivio-healthcare-security-hardening') . '</th></tr>';
             foreach ($scan['frameworks'][$key]['findings'] as $f) {
                 echo '<tr><td>' . esc_html(strtoupper((string) $f['severity'])) . '</td><td>' . esc_html((string) $f['message']) . '</td></tr>';
             }
@@ -385,11 +413,15 @@ class Nubivio_HSH_Docs {
         if (empty($probe['ok'])) {
             echo '<p class="muted">' . esc_html__('Live verification was unavailable; showing configured headers.', 'nubivio-healthcare-security-hardening') . '</p>';
         }
-        echo '<table><tr><th>' . esc_html__('Header', 'nubivio-healthcare-security-hardening') . '</th><th>' . esc_html__('Status', 'nubivio-healthcare-security-hardening') . '</th></tr>';
+        echo '<table><tr>'
+            . '<th>' . esc_html__('Header', 'nubivio-healthcare-security-hardening') . '</th>'
+            . '<th>' . esc_html__('Status', 'nubivio-healthcare-security-hardening') . '</th></tr>';
         foreach ($this->core->preview_headers() as $name => $val) {
             if (!empty($probe['ok'])) {
                 $sent = isset($probe['present'][strtolower($name)]);
-                $st = $sent ? '<span class="pass">' . esc_html__('sent', 'nubivio-healthcare-security-hardening') . '</span>' : '<span class="fail">' . esc_html__('missing', 'nubivio-healthcare-security-hardening') . '</span>';
+                $st = $sent
+                    ? '<span class="pass">' . esc_html__('sent', 'nubivio-healthcare-security-hardening') . '</span>'
+                    : '<span class="fail">' . esc_html__('missing', 'nubivio-healthcare-security-hardening') . '</span>';
             } else {
                 $st = '<span class="warn">' . esc_html__('configured', 'nubivio-healthcare-security-hardening') . '</span>';
             }
@@ -424,7 +456,14 @@ class Nubivio_HSH_Docs {
 
         // CRA deadline awareness.
         echo '<h2>' . esc_html__('CRA reporting deadlines (awareness)', 'nubivio-healthcare-security-hardening') . '</h2>';
-        echo '<p class="muted">' . esc_html__('Under the CRA, actively exploited vulnerabilities require an early warning within 24 hours, a notification within 72 hours, and a final report within 14 days. This is awareness information, not legal advice.', 'nubivio-healthcare-security-hardening') . '</p>';
+        $deadlines = array(
+            __(
+                'Under the CRA, actively exploited vulnerabilities require an early warning within 24 hours, a notification within 72 hours, and a final report within 14 days.',
+                'nubivio-healthcare-security-hardening'
+            ),
+            __('This is awareness information, not legal advice.', 'nubivio-healthcare-security-hardening'),
+        );
+        echo '<p class="muted">' . esc_html(implode(' ', $deadlines)) . '</p>';
 
         echo $this->html_foot(); // phpcs:ignore WordPress.Security.EscapeOutput
     }
