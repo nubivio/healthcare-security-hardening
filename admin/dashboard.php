@@ -208,8 +208,6 @@ if (class_exists('Nubivio_HSH_Php_Runtime')):
         'cra'  => __('CRA: plugin readiness', 'nubivio-healthcare-security-hardening'),
         'gdpr' => __('GDPR', 'nubivio-healthcare-security-hardening'),
         'nis2' => __('NIS2 Art. 21', 'nubivio-healthcare-security-hardening'),
-        // v2.6.0 modules.
-        'redirects'   => __('Redirect chain security headers', 'nubivio-healthcare-security-hardening'),
     );
     foreach ($fw_labels as $key => $label):
         if (empty($scan['frameworks'][$key])) {
@@ -312,6 +310,77 @@ if (class_exists('Nubivio_HSH_Php_Runtime')):
                         </li>
                     <?php endforeach; ?>
                 </ul>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
+    <?php
+    // v2.6.0 security headers across the redirect chain.
+    if (!empty($scan['frameworks']['redirects']['summary']['chains'])):
+        $rdr      = $scan['frameworks']['redirects'];
+        $rdr_ends = array(
+            'too_many'    => __('stopped after 5 hops', 'nubivio-healthcare-security-hardening'),
+            'loop'        => __('redirect loop', 'nubivio-healthcare-security-hardening'),
+            'external'    => __('leaves your domain, not followed', 'nubivio-healthcare-security-hardening'),
+            'unreachable' => __('could not be requested', 'nubivio-healthcare-security-hardening'),
+            'error'       => __('request failed', 'nubivio-healthcare-security-hardening'),
+        );
+        ?>
+        <div class="ns-card ns-redirects">
+            <h2><?php esc_html_e('Redirect chain security headers', 'nubivio-healthcare-security-hardening'); ?></h2>
+            <p class="ns-card-intro"><?php
+                esc_html_e(
+                    'Every step from http to your homepage, checked one by one. Each HTTPS step should send HSTS, and the first step should go to HTTPS on the same host.',
+                    'nubivio-healthcare-security-hardening'
+                );
+            ?></p>
+            <?php foreach ($rdr['summary']['chains'] as $rdr_chain): ?>
+                <h3><code><?php echo esc_html($rdr_chain['start']); ?></code></h3>
+                <table class="ns-evidence-table">
+                    <thead><tr>
+                        <th>#</th>
+                        <th><?php esc_html_e('URL', 'nubivio-healthcare-security-hardening'); ?></th>
+                        <th><?php esc_html_e('HTTP status', 'nubivio-healthcare-security-hardening'); ?></th>
+                        <th><?php esc_html_e('Location', 'nubivio-healthcare-security-hardening'); ?></th>
+                        <th>HSTS</th>
+                    </tr></thead>
+                    <tbody>
+                    <?php foreach ($rdr_chain['hops'] as $rdr_i => $rdr_hop):
+                        $rdr_https = strpos((string) $rdr_hop['url'], 'https://') === 0;
+                        ?>
+                        <tr>
+                            <td><?php echo (int) $rdr_i + 1; ?></td>
+                            <td><code><?php echo esc_html($rdr_hop['url']); ?></code></td>
+                            <td><?php echo (int) $rdr_hop['status']; ?></td>
+                            <td><?php if ($rdr_hop['location'] !== ''): ?><code><?php echo esc_html($rdr_hop['location']); ?></code><?php endif; ?></td>
+                            <td><?php if (!$rdr_https): ?>
+                                <?php esc_html_e('n/a (http)', 'nubivio-healthcare-security-hardening'); ?>
+                            <?php elseif ($rdr_hop['hsts']): ?>
+                                <span class="ns-chip ns-chip-ok"><?php esc_html_e('present', 'nubivio-healthcare-security-hardening'); ?></span>
+                            <?php else: ?>
+                                <span class="ns-chip ns-chip-medium"><?php esc_html_e('missing', 'nubivio-healthcare-security-hardening'); ?></span>
+                            <?php endif; ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    <?php if (isset($rdr_ends[$rdr_chain['end']])): ?>
+                        <tr><td colspan="5"><?php echo esc_html($rdr_ends[$rdr_chain['end']]); ?></td></tr>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            <?php endforeach; ?>
+            <?php if (!empty($rdr['findings'])): ?>
+                <ul class="ns-finding-list">
+                    <?php foreach ($rdr['findings'] as $rdr_f): ?>
+                        <li class="ns-finding ns-finding-<?php echo esc_attr($rdr_f['severity']); ?>">
+                            <span class="ns-chip ns-chip-<?php echo esc_attr($rdr_f['severity']); ?>"><?php
+                                echo esc_html(strtoupper($rdr_f['severity']));
+                            ?></span>
+                            <?php echo esc_html($rdr_f['message']); ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <p class="ns-ok-line"><?php esc_html_e('No issues detected.', 'nubivio-healthcare-security-hardening'); ?></p>
             <?php endif; ?>
         </div>
     <?php endif; ?>

@@ -3,106 +3,179 @@
  * Security headers across the redirect chain (v2.6.0).
  *
  * The HSTS module only looks at the final homepage response. This module
- * follows the redirect chain for the four entry variants (http and https,
- * with and without www) hop by hop and checks:
- * - http entry points redirect to https on the same host first (the order
- *   hstspreload.org and internet.nl expect), preferably with 301 or 308;
- * - every https hop, including intermediate redirects, sends
- *   Strict-Transport-Security;
- * - chains do not end on plain http, loop, or exceed five hops.
+ * follows the chain from http://<host>/ and from the www or non-www
+ * variant (only when that variant has an A or AAAA record) hop by hop and
+ * records, per hop, the URL, status, Location and whether HSTS was sent.
  * It runs next to the HSTS check and does not replace it.
  *
- * Safety: only hosts inside the site's own domain are requested (apex and
- * subdomains); a redirect to any other host is recorded and not followed.
- * GET with timeout 5, redirection 0 and limit_response_size 1024. Only
- * URLs, status codes and an HSTS yes/no are stored.
+ * Findings:
+ * - an https hop without Strict-Transport-Security (medium);
+ * - the first step from http does not go to https on the same host (low);
+ * - a chain longer than 3 hops (low);
+ * - a redirect to another domain (low, reported only, not followed).
+ *
+ * Safety: only hosts inside the site's registered domain are requested.
+ * GET, timeout 8 s, redirection 0, 1 KB body limit, at most 5 hops per
+ * start point. Only URLs, status codes and an HSTS yes/no are stored.
+ * Cached for 12 hours.
  *
  * @package Nubivio_HSH
  */
+
 if (!defined('ABSPATH')) {
     exit;
 }
 
 class Nubivio_HSH_Redirects {
 
-    const CACHE_TTL = 21600;
-    const MAX_HOPS  = 5;
+    const CACHE_TTL   = 43200;
+    const MAX_HOPS    = 5;
+    const LONG_CHAIN  = 3;
+    const TIMEOUT     = 8;
+    const USER_AGENT  = 'Nubivio-HSH/2.6 redirects';
 
-    /** @var Nubivio_HSH */
+    /** @var Nubivio_HSH|null */
     private $core;
 
-    public function __construct($core) {
+    /**
+     * @param Nubivio_HSH|null $core Plugin core.
+     */
+    public function __construct($core = null) {
         $this->core = $core;
     }
 
+    /**
+     * Transient key for a host.
+     *
+     * @param string $host Home host.
+     * @return string
+     */
     public static function cache_key($host) {
         return 'nubivio_hsh_redirects_' . md5((string) $host);
     }
 
-    public static function clear_cache($host) {
-        delete_transient(self::cache_key($host));
+    /**
+     * Forget the cached chains for the current site.
+     *
+     * @return void
+     */
+    public static function clear_cache() {
+        delete_transient(self::cache_key(strtolower((string) wp_parse_url(home_url(), PHP_URL_HOST))));
     }
 
     /**
+     * Run the redirect chain check (cached for 12 hours).
+     *
      * @return array{findings:array,counts:array<string,int>,summary:array}
      */
     public function run() {
         $host = strtolower((string) wp_parse_url(home_url(), PHP_URL_HOST));
         if ($host === '') {
-            return $this->evaluate(array('host' => '', 'chains' => array()));
+            return $this->evaluate(array('host' => '', 'domain' => '', 'chains' => array()));
         }
         $key    = self::cache_key($host);
         $cached = get_transient($key);
         if (is_array($cached) && isset($cached['chains'])) {
-            $summary = $cached;
-        } else {
-            $summary = $this->probe($host);
-            set_transient($key, $summary, self::CACHE_TTL);
+            return $this->evaluate($cached);
         }
+        $summary = $this->probe($host);
+        set_transient($key, $summary, self::CACHE_TTL);
         return $this->evaluate($summary);
     }
 
     /**
-     * Apex and www host for the site host.
+     * The www or non-www counterpart of a host.
      *
-     * @param string $host Home host.
-     * @return array{apex:string,www:string}
+     * @param string $host Host.
+     * @return string
      */
-    public static function host_variants($host) {
+    public static function variant($host) {
         $host = strtolower((string) $host);
-        $apex = strpos($host, 'www.') === 0 ? substr($host, 4) : $host;
-        return array('apex' => $apex, 'www' => 'www.' . $apex);
+        return strpos($host, 'www.') === 0 ? substr($host, 4) : 'www.' . $host;
     }
 
     /**
-     * Follow each entry variant hop by hop.
+     * Approximate registered domain without a public suffix list: the last
+     * two labels, or three when the second-level label is a common
+     * registry label under a two-letter country code (co.uk, com.au).
+     *
+     * @param string $host Host.
+     * @return string
+     */
+    public static function registered_domain($host) {
+        $labels = explode('.', strtolower(trim((string) $host, '.')));
+        $count  = count($labels);
+        if ($count <= 2) {
+            return implode('.', $labels);
+        }
+        $second = $labels[$count - 2];
+        $tld    = $labels[$count - 1];
+        $sld    = array('co', 'com', 'org', 'net', 'ac', 'gov', 'edu', 'nhs', 'ltd', 'plc', 'or', 'ne', 'gv');
+        if (strlen($tld) === 2 && in_array($second, $sld, true)) {
+            return implode('.', array_slice($labels, -3));
+        }
+        return implode('.', array_slice($labels, -2));
+    }
+
+    /**
+     * Whether a host has an A or AAAA record.
+     *
+     * @param string $host Host.
+     * @return bool
+     */
+    private static function resolves($host) {
+        if (!function_exists('dns_get_record')) {
+            return false;
+        }
+        foreach (array(DNS_A, DNS_AAAA) as $type) {
+            $records = @dns_get_record($host, $type); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+            if (is_array($records) && !empty($records)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Follow each start point hop by hop.
      *
      * @param string $host Home host.
      * @return array<string,mixed>
      */
     private function probe($host) {
-        $variants = self::host_variants($host);
-        $starts   = array(
-            'http://' . $variants['apex'] . '/',
-            'http://' . $variants['www'] . '/',
-            'https://' . $variants['apex'] . '/',
-            'https://' . $variants['www'] . '/',
-        );
+        $domain  = self::registered_domain($host);
+        $variant = self::variant($host);
+        $starts  = array('http://' . $host . '/');
+        /**
+         * Filter whether the www or non-www variant resolves (tests, split DNS).
+         *
+         * @param bool   $resolves Result of the A/AAAA lookup.
+         * @param string $variant  Variant host.
+         */
+        if (apply_filters('nubivio_hsh_redirects_variant_resolves', self::resolves($variant), $variant)) {
+            $starts[] = 'http://' . $variant . '/';
+        }
         $chains = array();
         foreach ($starts as $start) {
-            $chains[] = $this->follow($start, $variants['apex']);
+            $chains[] = $this->follow($start, $domain);
         }
-        return array('host' => $host, 'apex' => $variants['apex'], 'chains' => $chains);
+        return array(
+            'host'    => $host,
+            'domain'  => $domain,
+            'variant' => $variant,
+            'chains'  => $chains,
+            'time'    => time(),
+        );
     }
 
     /**
      * Follow one chain without letting the HTTP API redirect for us.
      *
-     * @param string $start Start URL.
-     * @param string $apex  Apex domain; only hosts inside it are requested.
+     * @param string $start  Start URL.
+     * @param string $domain Registered domain; only hosts inside it are requested.
      * @return array{start:string,hops:array,end:string}
      */
-    private function follow($start, $apex) {
+    private function follow($start, $domain) {
         $hops = array();
         $url  = $start;
         $seen = array();
@@ -117,12 +190,13 @@ class Nubivio_HSH_Redirects {
                 break;
             }
             $seen[$url] = true;
-            $res = wp_remote_get(
+            $res        = wp_remote_get(
                 $url,
                 array(
-                    'timeout'             => 5,
+                    'timeout'             => self::TIMEOUT,
                     'redirection'         => 0,
                     'limit_response_size' => 1024,
+                    'user-agent'          => self::USER_AGENT,
                 )
             );
             if (is_wp_error($res)) {
@@ -130,26 +204,32 @@ class Nubivio_HSH_Redirects {
                 break;
             }
             $code     = (int) wp_remote_retrieve_response_code($res);
-            $location = (string) wp_remote_retrieve_header($res, 'location');
+            $location = trim((string) wp_remote_retrieve_header($res, 'location'));
             $hsts     = trim((string) wp_remote_retrieve_header($res, 'strict-transport-security')) !== '';
-            $next     = ($code >= 300 && $code < 400 && $location !== '') ? self::resolve($url, $location) : '';
-            $hops[]   = array(
+            $next     = '';
+            if ($code >= 300 && $code < 400 && $location !== '') {
+                $next = self::resolve($url, $location);
+            }
+            $hops[] = array(
                 'url'      => $url,
                 'status'   => $code,
-                'hsts'     => $hsts,
                 'location' => $next,
+                'hsts'     => $hsts,
             );
             if ($next === '') {
                 break;
             }
-            $next_host = strtolower((string) wp_parse_url($next, PHP_URL_HOST));
-            if (!self::in_domain($next_host, $apex)) {
+            if (!self::in_domain(strtolower((string) wp_parse_url($next, PHP_URL_HOST)), $domain)) {
                 $end = 'external';
                 break;
             }
             $url = $next;
         }
-        return array('start' => $start, 'hops' => $hops, 'end' => $end);
+        return array(
+            'start' => $start,
+            'hops'  => $hops,
+            'end'   => $end,
+        );
     }
 
     /**
@@ -179,11 +259,18 @@ class Nubivio_HSH_Redirects {
         return $scheme . '://' . $host . $port . $dir . $location;
     }
 
-    private static function in_domain($host, $apex) {
-        if ($host === '' || $apex === '') {
+    /**
+     * Whether a host belongs to the registered domain.
+     *
+     * @param string $host   Host.
+     * @param string $domain Registered domain.
+     * @return bool
+     */
+    private static function in_domain($host, $domain) {
+        if ($host === '' || $domain === '') {
             return false;
         }
-        return $host === $apex || substr($host, -strlen('.' . $apex)) === '.' . $apex;
+        return $host === $domain || substr($host, -strlen('.' . $domain)) === '.' . $domain;
     }
 
     /**
@@ -196,34 +283,25 @@ class Nubivio_HSH_Redirects {
         $findings  = array();
         $counts    = array('high' => 0, 'medium' => 0, 'low' => 0);
         $home_host = isset($summary['host']) ? (string) $summary['host'] : '';
-        $seen_hsts = array();
 
         foreach ((array) $summary['chains'] as $chain) {
-            $hops = isset($chain['hops']) ? (array) $chain['hops'] : array();
+            $hops  = isset($chain['hops']) ? (array) $chain['hops'] : array();
+            $start = (string) $chain['start'];
             if (!$hops) {
                 continue;
             }
-            $first = $hops[0];
-            $start = (string) $chain['start'];
-
-            if (strpos($start, 'http://') === 0) {
-                $this->check_http_entry($findings, $counts, $start, $first);
-            }
+            $this->check_first_hop($findings, $counts, $start, $hops[0]);
 
             foreach ($hops as $i => $hop) {
                 if (strpos((string) $hop['url'], 'https://') !== 0 || !empty($hop['hsts'])) {
                     continue;
                 }
-                $is_last  = $i === count($hops) - 1;
                 $hop_host = strtolower((string) wp_parse_url($hop['url'], PHP_URL_HOST));
+                $is_final = $i === count($hops) - 1 && $hop['location'] === '';
                 // The final homepage response is already covered by the HSTS module.
-                if ($is_last && $hop_host === $home_host && empty($hop['location'])) {
+                if ($is_final && $hop_host === $home_host) {
                     continue;
                 }
-                if (isset($seen_hsts[$hop['url']])) {
-                    continue;
-                }
-                $seen_hsts[$hop['url']] = true;
                 $this->add(
                     $findings,
                     $counts,
@@ -240,106 +318,78 @@ class Nubivio_HSH_Redirects {
                 );
             }
 
-            $last = $hops[count($hops) - 1];
-            if ($chain['end'] === 'loop' || $chain['end'] === 'too_many') {
+            if (count($hops) > self::LONG_CHAIN || $chain['end'] === 'loop' || $chain['end'] === 'too_many') {
                 $this->add(
                     $findings,
                     $counts,
-                    'medium',
+                    'low',
                     sprintf(
-                        /* translators: 1: start URL, 2: maximum number of hops. */
-                        __('The redirect chain from %1$s loops or needs more than %2$d hops. Redirect each variant in one or two steps.', 'nubivio-healthcare-security-hardening'),
+                        /* translators: 1: start URL, 2: maximum advised number of hops. */
+                        __('The redirect chain from %1$s needs more than %2$d steps or loops. Redirect in fewer steps.', 'nubivio-healthcare-security-hardening'),
                         $start,
-                        self::MAX_HOPS
+                        self::LONG_CHAIN
                     )
                 );
-            } elseif (
-                $chain['end'] === 'ok'
-                && empty($last['location'])
-                && strpos((string) $last['url'], 'http://') === 0
-                && count($hops) > 1
-            ) {
+            }
+            if ($chain['end'] === 'external') {
+                $last = $hops[count($hops) - 1];
                 $this->add(
                     $findings,
                     $counts,
-                    'high',
+                    'low',
                     sprintf(
-                        /* translators: 1: start URL, 2: final URL. */
-                        __('The redirect chain from %1$s ends on plain HTTP (%2$s). Visitors are moved away from HTTPS.', 'nubivio-healthcare-security-hardening'),
+                        /* translators: 1: start URL, 2: redirect target outside the site's domain. */
+                        __('The redirect chain from %1$s leaves your domain for %2$s. That target was not checked.', 'nubivio-healthcare-security-hardening'),
                         $start,
-                        $last['url']
+                        $last['location']
                     )
                 );
             }
         }
 
-        return array('findings' => $findings, 'counts' => $counts, 'summary' => $summary);
+        return array(
+            'findings' => $findings,
+            'counts'   => $counts,
+            'summary'  => $summary,
+        );
     }
 
     /**
-     * Rules for an http:// entry point.
+     * The first response for an http:// start must redirect to https on
+     * the same host (the order hstspreload.org and internet.nl expect).
+     *
+     * @param array  $findings Findings list.
+     * @param array  $counts   Counters.
+     * @param string $start    Start URL.
+     * @param array  $first    First hop.
+     * @return void
      */
-    private function check_http_entry(&$findings, &$counts, $start, $first) {
-        $status = (int) $first['status'];
-        $next   = (string) $first['location'];
-        if ($next === '') {
-            if ($status >= 200 && $status < 300) {
-                $this->add(
-                    $findings,
-                    $counts,
-                    'high',
-                    sprintf(
-                        /* translators: %s: start URL. */
-                        __('%s serves content over plain HTTP instead of redirecting to HTTPS.', 'nubivio-healthcare-security-hardening'),
-                        $start
-                    )
-                );
-            }
+    private function check_first_hop(&$findings, &$counts, $start, $first) {
+        $start_host = strtolower((string) wp_parse_url($start, PHP_URL_HOST));
+        $next       = (string) $first['location'];
+        $expected   = 'https://' . $start_host . '/';
+        if ($next !== '' && strpos($next, 'https://') === 0
+            && strtolower((string) wp_parse_url($next, PHP_URL_HOST)) === $start_host) {
             return;
         }
-        $start_host = strtolower((string) wp_parse_url($start, PHP_URL_HOST));
-        $next_host  = strtolower((string) wp_parse_url($next, PHP_URL_HOST));
-        $next_https = strpos($next, 'https://') === 0;
-
-        if (!$next_https) {
-            $this->add(
-                $findings,
-                $counts,
-                'medium',
-                sprintf(
-                    /* translators: 1: start URL, 2: redirect target. */
-                    __('%1$s redirects to %2$s over plain HTTP. Redirect to HTTPS on the same host first.', 'nubivio-healthcare-security-hardening'),
-                    $start,
-                    $next
-                )
+        if ($next === '') {
+            $message = sprintf(
+                /* translators: 1: start URL, 2: HTTP status code, 3: expected https URL. */
+                __('%1$s answers with HTTP %2$d instead of redirecting to %3$s.', 'nubivio-healthcare-security-hardening'),
+                $start,
+                (int) $first['status'],
+                $expected
             );
-        } elseif ($next_host !== $start_host) {
-            $this->add(
-                $findings,
-                $counts,
-                'medium',
-                sprintf(
-                    /* translators: 1: start URL, 2: redirect target, 3: expected https URL on the same host. */
-                    __('%1$s redirects straight to %2$s. Redirect to %3$s first so that host can set HSTS; HSTS preload requires this order.', 'nubivio-healthcare-security-hardening'),
-                    $start,
-                    $next,
-                    'https://' . $start_host . '/'
-                )
+        } else {
+            $message = sprintf(
+                /* translators: 1: start URL, 2: redirect target, 3: expected https URL on the same host. */
+                __('%1$s redirects to %2$s. Redirect to %3$s first, so that host can set HSTS.', 'nubivio-healthcare-security-hardening'),
+                $start,
+                $next,
+                $expected
             );
         }
-        if ($status === 302 || $status === 303 || $status === 307) {
-            $this->add(
-                $findings,
-                $counts,
-                'low',
-                sprintf(
-                    /* translators: 1: start URL, 2: HTTP status code. */
-                    __('%1$s uses a temporary redirect (HTTP %2$d) to HTTPS. Use a permanent redirect (301 or 308).', 'nubivio-healthcare-security-hardening'),
-                    $start,
-                    $status
-                )
-            );
-        }
+        $this->add($findings, $counts, 'low', $message);
     }
 
     /**
@@ -362,7 +412,7 @@ class Nubivio_HSH_Redirects {
             return array(
                 'label'  => $label,
                 'status' => 'warn',
-                'detail' => __('None of the http/https and www variants could be requested, so the redirect chain was not checked.', 'nubivio-healthcare-security-hardening'),
+                'detail' => __('The http start points could not be requested, so the redirect chain was not checked.', 'nubivio-healthcare-security-hardening'),
             );
         }
         $high   = isset($counts['high']) ? (int) $counts['high'] : 0;
@@ -372,7 +422,7 @@ class Nubivio_HSH_Redirects {
             return array(
                 'label'  => $label,
                 'status' => 'pass',
-                'detail' => __('All variants redirect to HTTPS correctly and every HTTPS hop sends HSTS.', 'nubivio-healthcare-security-hardening'),
+                'detail' => __('http redirects to HTTPS on the same host and every HTTPS hop sends HSTS.', 'nubivio-healthcare-security-hardening'),
             );
         }
         return array(
@@ -388,13 +438,26 @@ class Nubivio_HSH_Redirects {
         );
     }
 
+    /**
+     * Append a finding once and bump its counter.
+     *
+     * @param array  $findings Findings list.
+     * @param array  $counts   Counters.
+     * @param string $severity high, medium or low.
+     * @param string $message  Message.
+     * @return void
+     */
     private function add(&$findings, &$counts, $severity, $message) {
         foreach ($findings as $existing) {
             if ($existing['message'] === $message) {
                 return;
             }
         }
-        $findings[]        = array('severity' => $severity, 'message' => $message, 'controls' => array('A.8.21', 'A.8.24'));
+        $findings[] = array(
+            'severity' => $severity,
+            'message'  => $message,
+            'controls' => array('A.8.21', 'A.8.24'),
+        );
         $counts[$severity]++;
     }
 }
