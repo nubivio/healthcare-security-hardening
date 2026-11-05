@@ -110,6 +110,7 @@ final class Nubivio_HSH {
             'class-php-runtime.php',
             'class-exposure.php',
             'class-redirects.php',
+            'class-rdap.php',
             'class-compliance-map.php',
             'class-score.php',
             'class-scanner.php',
@@ -254,6 +255,9 @@ final class Nubivio_HSH {
             // DNS and CSP report-only dashboard (v2.4.0).
             'dns_dkim_selectors' => '',
             'dns_use_doh' => 0,
+
+            // External sources, opt-in, default off (v2.6.0).
+            'rdap_enabled' => 0,
             'csp_seen_hosts' => array(),
             'csp_inventory_at' => 0,
             'csp_inline_scripts' => 0,
@@ -751,7 +755,7 @@ final class Nubivio_HSH {
             'hsts_enabled','hsts_subdomains','hsts_preload',
             'csp_enabled','csp_report_only','referrer_enabled','nosniff_enabled',
             'xfo_enabled','permissions_enabled','strip_legacy',
-            'coop_enabled','coep_enabled','corp_enabled','permissions_policy_enabled','dns_use_doh',
+            'coop_enabled','coep_enabled','corp_enabled','permissions_policy_enabled','dns_use_doh','rdap_enabled',
             'sectxt_enabled','sectxt_love','gf_block_enabled',
         ) as $key) {
             $clean[$key] = empty($in[$key]) ? 0 : 1;
@@ -1438,6 +1442,31 @@ final class Nubivio_HSH {
                     ?></label><?php $this->area('dns_dkim_selectors', $o, 2); ?></div>
                     <div class="ns-field ns-field-flat"><?php
                         $this->cb('dns_use_doh', __('Also validate DNSSEC via Cloudflare DoH (optional, sends the hostname to cloudflare-dns.com)', 'nubivio-healthcare-security-hardening'), $o);
+                    ?></div>
+                </div>
+                <div class="ns-card">
+                    <h2><?php esc_html_e('External sources (opt-in)', 'nubivio-healthcare-security-hardening'); ?></h2>
+                    <p class="ns-card-intro"><?php
+                        esc_html_e(
+                            'Each source is off by default. When on, only your domain name is sent, and only during a manual or scheduled scan.',
+                            'nubivio-healthcare-security-hardening'
+                        );
+                        echo ' ';
+                        esc_html_e('Nothing is sent on a page load. See External Services in the readme.', 'nubivio-healthcare-security-hardening');
+                    ?></p>
+                    <div class="ns-field ns-field-flat"><?php
+                        $this->cb(
+                            'rdap_enabled',
+                            __('Domain registration check via RDAP', 'nubivio-healthcare-security-hardening'),
+                            $o,
+                            esc_html__(
+                                'Sends your domain name to the IANA RDAP bootstrap (data.iana.org) and to the RDAP server of your registry.',
+                                'nubivio-healthcare-security-hardening'
+                            ) . ' ' . esc_html__(
+                                'Shows registrar, expiry date, transfer lock and DNSSEC delegation.',
+                                'nubivio-healthcare-security-hardening'
+                            )
+                        );
                     ?></div>
                 </div>
                 <div class="ns-card"><h2><?php esc_html_e('CSP report-only', 'nubivio-healthcare-security-hardening'); ?></h2><p class="ns-card-intro"><?php

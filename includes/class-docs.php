@@ -403,6 +403,7 @@ class Nubivio_HSH_Docs {
             'php_runtime' => __('PHP runtime vulnerabilities', 'nubivio-healthcare-security-hardening'),
             'exposure'    => __('Exposure scan', 'nubivio-healthcare-security-hardening'),
             'redirects'   => __('Redirect chain security headers', 'nubivio-healthcare-security-hardening'),
+            'rdap'        => __('Domain registration (RDAP)', 'nubivio-healthcare-security-hardening'),
         );
         foreach ($names as $key => $label) {
             if (empty($scan['frameworks'][$key]['findings'])) {

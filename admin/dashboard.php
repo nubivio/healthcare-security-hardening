@@ -386,6 +386,96 @@ if (class_exists('Nubivio_HSH_Php_Runtime')):
     <?php endif; ?>
 
     <?php
+    // v2.6.0 domain registration via RDAP (opt-in).
+    if (!empty($scan['frameworks']['rdap']['summary']['enabled'])):
+        $rdap_r   = $scan['frameworks']['rdap'];
+        $rdap_s   = $rdap_r['summary'];
+        $rdap_fmt = get_option('date_format');
+        ?>
+        <div class="ns-card ns-rdap">
+            <h2><?php esc_html_e('Domain registration (RDAP)', 'nubivio-healthcare-security-hardening'); ?></h2>
+            <?php if (empty($rdap_s['available'])): ?>
+                <p class="ns-card-intro"><?php
+                    $rdap_row = Nubivio_HSH_Rdap::health_row($rdap_r);
+                    echo esc_html($rdap_row ? $rdap_row['detail'] : '');
+                ?></p>
+            <?php else: ?>
+                <table class="ns-evidence-table"><tbody>
+                    <tr>
+                        <td><?php esc_html_e('Domain', 'nubivio-healthcare-security-hardening'); ?></td>
+                        <td><code><?php echo esc_html($rdap_s['domain']); ?></code></td>
+                    </tr>
+                    <tr>
+                        <td><?php esc_html_e('Registrar', 'nubivio-healthcare-security-hardening'); ?></td>
+                        <td><?php echo esc_html($rdap_s['registrar'] !== '' ? $rdap_s['registrar'] : '-'); ?></td>
+                    </tr>
+                    <tr>
+                        <td><?php esc_html_e('Registered', 'nubivio-healthcare-security-hardening'); ?></td>
+                        <td><?php
+                        if ($rdap_s['created']) {
+                            echo esc_html(sprintf(
+                                /* translators: 1: date, 2: age in days. */
+                                __('%1$s (%2$d days ago)', 'nubivio-healthcare-security-hardening'),
+                                date_i18n($rdap_fmt, (int) $rdap_s['created']),
+                                (int) $rdap_s['age_days']
+                            ));
+                        } else {
+                            echo '-';
+                        }
+                        ?></td>
+                    </tr>
+                    <tr>
+                        <td><?php esc_html_e('Expires', 'nubivio-healthcare-security-hardening'); ?></td>
+                        <td><?php
+                        if ($rdap_s['expires']) {
+                            echo esc_html(sprintf(
+                                /* translators: 1: date, 2: days remaining. */
+                                __('%1$s (in %2$d days)', 'nubivio-healthcare-security-hardening'),
+                                date_i18n($rdap_fmt, (int) $rdap_s['expires']),
+                                (int) $rdap_s['expires_days']
+                            ));
+                        } else {
+                            esc_html_e('not published by the registry', 'nubivio-healthcare-security-hardening');
+                        }
+                        ?></td>
+                    </tr>
+                    <tr>
+                        <td><?php esc_html_e('Status', 'nubivio-healthcare-security-hardening'); ?></td>
+                        <td><?php echo esc_html($rdap_s['status'] ? implode(', ', $rdap_s['status']) : '-'); ?></td>
+                    </tr>
+                    <tr>
+                        <td><?php esc_html_e('DNSSEC delegation (registry)', 'nubivio-healthcare-security-hardening'); ?></td>
+                        <td><?php
+                        if ($rdap_s['signed'] === null) {
+                            echo '-';
+                        } elseif ($rdap_s['signed']) {
+                            esc_html_e('signed', 'nubivio-healthcare-security-hardening');
+                        } else {
+                            esc_html_e('not signed', 'nubivio-healthcare-security-hardening');
+                        }
+                        ?></td>
+                    </tr>
+                </tbody></table>
+                <?php foreach ((array) $rdap_s['notes'] as $rdap_note): ?>
+                    <p class="ns-desc"><?php echo esc_html($rdap_note); ?></p>
+                <?php endforeach; ?>
+                <?php if (!empty($rdap_r['findings'])): ?>
+                    <ul class="ns-finding-list">
+                        <?php foreach ($rdap_r['findings'] as $rdap_f): ?>
+                            <li class="ns-finding ns-finding-<?php echo esc_attr($rdap_f['severity']); ?>">
+                                <span class="ns-chip ns-chip-<?php echo esc_attr($rdap_f['severity']); ?>"><?php
+                                    echo esc_html(strtoupper($rdap_f['severity']));
+                                ?></span>
+                                <?php echo esc_html($rdap_f['message']); ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
+    <?php
     // WordPress core integrity (v2.3.0).
     if (!empty($scan['frameworks']['integrity'])):
         $integrity = $scan['frameworks']['integrity'];

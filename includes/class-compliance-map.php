@@ -35,7 +35,7 @@ class Nubivio_HSH_Compliance_Map {
         return array(
             'iso27001' => array(
                 'A.5.14' => __('Information transfer (email authentication and transport security)', 'nubivio-healthcare-security-hardening'),
-                'A.5.30' => __('ICT readiness (certificate and domain freshness)', 'nubivio-healthcare-security-hardening'),
+                'A.5.30' => __('ICT readiness (certificate expiry and domain registration)', 'nubivio-healthcare-security-hardening'),
                 'A.5.34' => __('Privacy and PII protection (cookies and trackers before consent)', 'nubivio-healthcare-security-hardening'),
                 'A.8.5'  => __('Secure authentication (login exposure and password quality)', 'nubivio-healthcare-security-hardening'),
                 'A.8.8'  => __('Management of technical vulnerabilities (plugin, core and PHP runtime currency)', 'nubivio-healthcare-security-hardening'),
@@ -48,7 +48,7 @@ class Nubivio_HSH_Compliance_Map {
             ),
             'nen7510' => array(
                 'A.5.14' => __('Information transfer for patient data (email authentication)', 'nubivio-healthcare-security-hardening'),
-                'A.5.30' => __('ICT readiness for care continuity (certificate and DNS)', 'nubivio-healthcare-security-hardening'),
+                'A.5.30' => __('ICT readiness for care continuity (certificate, DNS and domain registration)', 'nubivio-healthcare-security-hardening'),
                 'A.5.34' => __('Patient privacy (cookies, trackers, disclosure)', 'nubivio-healthcare-security-hardening'),
                 'A.8.5'  => __('Secure authentication for healthcare users', 'nubivio-healthcare-security-hardening'),
                 'A.8.8'  => __('Vulnerability management for medical WordPress sites', 'nubivio-healthcare-security-hardening'),
