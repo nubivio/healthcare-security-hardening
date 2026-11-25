@@ -10,6 +10,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// This view is required inside Nubivio_HSH::render_settings_page(), so its variables are method scoped, not globals.
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
+
 /** @var Nubivio_HSH $core */
 /** @var array $o */
 
@@ -310,10 +313,12 @@ if (class_exists('Nubivio_HSH_Php_Runtime')):
                         <td><code>/</code></td>
                         <td>&nbsp;</td>
                         <td><?php
-                        // phpcs:ignore WordPress.Security.EscapeOutput -- format string is static, parts are escaped.
-                        echo $exp_sum['generator']
-                            ? sprintf($exp_yes, 'low', esc_html__('exposed', 'nubivio-healthcare-security-hardening'))
-                            : sprintf($exp_yes, 'ok', esc_html__('not exposed', 'nubivio-healthcare-security-hardening'));
+                        echo wp_kses(
+                            $exp_sum['generator']
+                                ? sprintf($exp_yes, 'low', esc_html__('exposed', 'nubivio-healthcare-security-hardening'))
+                                : sprintf($exp_yes, 'ok', esc_html__('not exposed', 'nubivio-healthcare-security-hardening')),
+                            array('span' => array('class' => true))
+                        );
                         ?></td>
                     </tr>
                 <?php endif; ?>

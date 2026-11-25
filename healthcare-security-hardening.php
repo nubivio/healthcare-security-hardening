@@ -3,7 +3,7 @@
  * Plugin Name:       Nubivio Healthcare Security Hardening
  * Plugin URI:        https://github.com/nubivio/healthcare-security-hardening
  * Description:       Security headers, a self-renewing security.txt (RFC 9116) and an optional CRA, GDPR and NIS2 compliance scanner for healthcare WordPress sites. A building block toward NEN 7510.
- * Version:           2.6.0
+ * Version:           2.6.1
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Nubivio
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 
 final class Nubivio_HSH {
 
-    const VERSION     = '2.6.0';
+    const VERSION = '2.6.1';
     const OPTION      = 'nubivio_hsh_options';
     const SCAN_OPTION = 'nubivio_hsh_scan';
     const CRON_HOOK   = 'nubivio_hsh_daily';
@@ -52,7 +52,6 @@ final class Nubivio_HSH {
     private function __construct() {
         $this->load_includes();
 
-        add_action('init', array($this, 'load_textdomain'));
         add_action('send_headers', array($this, 'send_security_headers'));
         add_action('send_headers', array($this, 'send_additional_security_headers'), 20);
         add_action('send_headers', array($this, 'send_csp_report_only_header'), 999);
@@ -126,14 +125,6 @@ final class Nubivio_HSH {
                 require_once $dir . $file;
             }
         }
-    }
-
-    public function load_textdomain() {
-        load_plugin_textdomain(
-            'nubivio-healthcare-security-hardening',
-            false,
-            dirname(plugin_basename(__FILE__)) . '/languages'
-        );
     }
 
     /**
@@ -1030,8 +1021,10 @@ final class Nubivio_HSH {
 
     public function handle_csp_allowlist() {
         $this->verify_v240_action(self::CSP_ALLOWLIST_ACTION);
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce and capability checked in verify_v240_action().
         $directive = isset($_POST['directive']) ? sanitize_text_field(wp_unslash($_POST['directive'])) : '';
         $blocked   = isset($_POST['blocked_uri']) ? esc_url_raw(wp_unslash($_POST['blocked_uri'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
         if (class_exists('Nubivio_HSH_Csp')) {
             (new Nubivio_HSH_Csp($this))->add_to_allowlist($directive, $blocked);
         }

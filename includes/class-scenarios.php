@@ -454,7 +454,7 @@ class Nubivio_HSH_Scenarios {
                 return true;
             }
         }
-        return (bool) apply_filters('xmlrpc_enabled', true);
+        return (bool) apply_filters('xmlrpc_enabled', true); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- core filter.
     }
 
     /**

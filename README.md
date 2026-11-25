@@ -2,9 +2,9 @@
 
 Security headers, a self-renewing `security.txt` (RFC 9116), a PHP2Shell runtime check and an optional CRA, GDPR and NIS2 compliance scanner for healthcare-related WordPress sites. Built for general practitioners, psychologists and other healthcare professionals. Recommended as a building block toward NIS2, GDPR and NEN 7510 compliance.
 
-- **Version:** 2.6.0
+- **Version:** 2.6.1
 - **Requires WordPress:** 5.8 or higher
-- **Tested up to:** 7.1
+- **Tested up to:** 7.2
 - **Requires PHP:** 7.4
 - **License:** [GPL-2.0-or-later](LICENSE)
 

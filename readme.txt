@@ -2,9 +2,9 @@
 Contributors: nubivio
 Tags: security, security-txt, nis2, hsts, php2shell
 Requires at least: 5.8
-Tested up to: 7.1
+Tested up to: 7.2
 Requires PHP: 7.4
-Stable tag: 2.6.0
+Stable tag: 2.6.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -194,6 +194,12 @@ When CSP report-only is enabled, browsers may POST reports to the local endpoint
 
 == Changelog ==
 
+= 2.6.1 =
+* Tested with WordPress 7.2 (RC3) and PHP 8.6.0.
+* Plugin Check clean-up: translator comments, escaped exposure chips, unslashed CSP report user agent, documented false positives.
+* Removed the manual load_plugin_textdomain() call; WordPress.org translations load automatically since WordPress 4.6.
+* Shorter upgrade notices (300 character limit).
+
 = 2.6.0 =
 * New: PHP2Shell runtime check (CVE-2026-109618, CVE-2026-109619). Reads the running PHP version and compares it with the fixed releases 8.2.35, 8.3.36, 8.4.27 and 8.5.12, reports distribution builds as "verify with host", checks session.upload_progress and shows the result on the Compliance tab, in an admin notice and in Site Health. The plugin does not change PHP.
 * New: exposure scan for publicly reachable files and listings (/.git, /.env, wp-config backups, debug.log, uploads listing, readme and license files, user enumeration, generator tag).
@@ -279,11 +285,14 @@ When CSP report-only is enabled, browsers may POST reports to the local endpoint
 
 == Upgrade Notice ==
 
+= 2.6.1 =
+Compatibility release for WordPress 7.2 and PHP 8.6, plus Plugin Check clean-up. No functional changes.
+
 = 2.6.0 =
-Adds a PHP2Shell runtime check, an exposure scan, a redirect chain check, opt-in RDAP and Certificate Transparency checks, and risk scenarios. Also makes the cookie analysis and NEN 7510 / ISO 27001 mapping from 2.5.0 actually load. External sources are off by default; existing hardening is unchanged.
+Adds a PHP2Shell runtime check, exposure and redirect scans, opt-in RDAP and CT checks and risk scenarios. Fixes loading of the 2.5.0 cookie analysis and NEN 7510 mapping. External sources are off by default.
 
 = 2.5.0 =
-Adds compliance mapping to NEN 7510-2:2024 and ISO 27001:2022 controls, pre-consent cookie and tracker analysis, deeper email checks (SPF grading, RFC 7208 lookups, DKIM key strength, TLS-RPT, BIMI), DNS NS and SOA checks, CSP grading and an opt-in enforce switch with preflight, and security.txt Expires plus drift detection. All new checks are read-only; existing hardening is unchanged.
+Adds NEN 7510 and ISO 27001 mapping, pre-consent cookie analysis, deeper email and DNS checks, CSP grading with an opt-in enforce switch and security.txt drift detection. All new checks are read-only.
 
 = 2.4.0 =
 Adds optional advanced hardening headers, HSTS preload readiness, DNS and TLS overview cards, and CSP report-only monitoring. Existing hardening remains unchanged; CSP report-only is off until you enable it.

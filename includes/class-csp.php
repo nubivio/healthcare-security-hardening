@@ -27,6 +27,7 @@ class Nubivio_HSH_Csp {
             $findings[] = array(
                 'severity' => 'low',
                 'message'  => sprintf(
+                    /* translators: %d: number of external scripts. */
                     _n(
                         '%d external script is a candidate for Subresource Integrity. Consider pinning it with `integrity` attributes.',
                         '%d external scripts are candidates for Subresource Integrity. Consider pinning them with `integrity` attributes.',
@@ -381,7 +382,8 @@ class Nubivio_HSH_Csp {
             }
         }
 
-        $bypass_hosts = array('googleapis.com', 'ajax.googleapis.com', 'cdnjs.cloudflare.com');
+        // Hostnames only compared against the site's CSP; nothing is loaded from them.
+        $bypass_hosts = array('googleapis.com', 'ajax.googleapis.com', 'cdnjs.cloudflare.com'); // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent
         foreach ($bypass_hosts as $host) {
             foreach ($script_src as $src) {
                 if ($this->script_src_matches_host($src, $host)) {
@@ -524,7 +526,7 @@ class Nubivio_HSH_Csp {
                 'count'               => 1,
                 'sample_document_uri' => $doc,
                 'sample_ua'           => substr(
-                    isset($_SERVER['HTTP_USER_AGENT']) ? (string) $_SERVER['HTTP_USER_AGENT'] : '',
+                    isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '',
                     0,
                     200
                 ),

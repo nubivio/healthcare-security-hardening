@@ -81,6 +81,7 @@ class Nubivio_HSH_Tls {
                 $findings,
                 $counts,
                 'high',
+                /* translators: %s: connection error message. */
                 sprintf(__('Could not establish TLS connection: %s.', 'nubivio-healthcare-security-hardening'), $errstr)
             );
             $result = array('findings' => $findings, 'counts' => $counts, 'summary' => $summary);
@@ -89,7 +90,7 @@ class Nubivio_HSH_Tls {
         }
 
         $params = stream_context_get_params($client);
-        fclose($client);
+        fclose($client); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- network socket, not a file.
         $cert   = isset($params['options']['ssl']['peer_certificate'])
             ? $params['options']['ssl']['peer_certificate']
             : null;
@@ -129,6 +130,7 @@ class Nubivio_HSH_Tls {
                 $counts,
                 'high',
                 sprintf(
+                    /* translators: 1: number of days, 2: expiry date. */
                     __('TLS certificate expires in %1$d days (%2$s).', 'nubivio-healthcare-security-hardening'),
                     $summary['days_remaining'],
                     date_i18n(get_option('date_format'), $summary['valid_to'])
@@ -140,6 +142,7 @@ class Nubivio_HSH_Tls {
                 $counts,
                 'medium',
                 sprintf(
+                    /* translators: 1: number of days, 2: expiry date. */
                     __('TLS certificate expires in %1$d days (%2$s).', 'nubivio-healthcare-security-hardening'),
                     $summary['days_remaining'],
                     date_i18n(get_option('date_format'), $summary['valid_to'])
@@ -208,6 +211,7 @@ class Nubivio_HSH_Tls {
             'detail' => $days === null
                 ? __('TLS certificate status is unavailable.', 'nubivio-healthcare-security-hardening')
                 : sprintf(
+                    /* translators: %d: number of days. */
                     _n(
                         'TLS certificate has %d day remaining.',
                         'TLS certificate has %d days remaining.',

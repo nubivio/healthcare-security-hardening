@@ -128,7 +128,7 @@ class Nubivio_HSH_Health {
         }
 
         // XML-RPC exposure.
-        $xmlrpc = apply_filters('xmlrpc_enabled', true);
+        $xmlrpc = apply_filters('xmlrpc_enabled', true); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- core filter.
         $checks[] = $this->check(
             __('XML-RPC', 'nubivio-healthcare-security-hardening'),
             $xmlrpc ? 'warn' : 'pass',

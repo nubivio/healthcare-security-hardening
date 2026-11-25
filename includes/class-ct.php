@@ -115,6 +115,7 @@ class Nubivio_HSH_Ct {
             ),
             'comodo'                => array('sectigo.com', 'comodo.com', 'comodoca.com'),
             'globalsign'            => array('globalsign.com'),
+            // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- CA hostnames for matching only, nothing is loaded.
             'amazon'                => array('amazon.com', 'amazontrust.com', 'awstrust.com', 'amazonaws.com', 'aws.amazon.com'),
             'entrust'               => array('entrust.net', 'affirmtrust.com'),
             'godaddy'               => array('godaddy.com', 'starfieldtech.com'),
@@ -177,6 +178,7 @@ class Nubivio_HSH_Ct {
         $rows = array();
         $ok   = 0;
         foreach (array('%.' . $domain, $domain) as $query) {
+            // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- crt.sh query string, not a WP_Query.
             $url    = self::ENDPOINT . '?q=' . rawurlencode($query) . '&output=json&exclude=expired';
             $result = $this->fetch($url);
             if ($result === null) {

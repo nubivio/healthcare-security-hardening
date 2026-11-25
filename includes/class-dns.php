@@ -232,6 +232,7 @@ class Nubivio_HSH_Dns {
                 $counts,
                 'low',
                 sprintf(
+                    /* translators: 1: domain name, 2: domain name used in the DNS record template. */
                     __('%1$s has no CAA record. Suggested template: %2$s. IN CAA 0 issue "letsencrypt.org"', 'nubivio-healthcare-security-hardening'),
                     $host,
                     $host

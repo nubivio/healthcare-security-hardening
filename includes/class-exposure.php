@@ -133,7 +133,7 @@ class Nubivio_HSH_Exposure {
             $list[] = array('id' => 'config_backup', 'path' => $path, 'severity' => 'high', 'match' => 'file');
         }
         // Health already reports XML-RPC when it is enabled; only check the file when it should be off.
-        if (!apply_filters('xmlrpc_enabled', true)) {
+        if (!apply_filters('xmlrpc_enabled', true)) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- core filter.
             $list[] = array(
                 'id'       => 'xmlrpc',
                 'path'     => '/xmlrpc.php',
